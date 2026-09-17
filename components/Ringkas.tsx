@@ -2,42 +2,46 @@
 
 import { useMeja } from "./MejaProvider";
 import { BATAS_HARI_KERJA } from "@/lib/data";
-import { hitungRingkas } from "@/lib/logika";
+import { hitungRingkas, hitungTindak } from "@/lib/logika";
 
 export function Ringkas() {
   const { s } = useMeja();
   const h = hitungRingkas(s.data);
-  const persenVerifikasi = h.antre ? Math.round((h.verifikasi / h.antre) * 100) : 0;
+  const t = hitungTindak(s.data);
 
   return (
     <dl className="ringkas">
       <div>
-        <dt>Antrean aktif</dt>
+        <dt>Menunggu regu</dt>
         <dd>
-          <span className="angka">{h.antre}</span>
-          <span className="delta">dari {h.total} laporan di meja</span>
+          <span className="angka">{t.tanpaPetugas}</span>
+          <span className="delta">dari {t.total} laporan di instansi</span>
         </dd>
       </div>
       <div>
-        <dt>Perlu verifikasi</dt>
+        <dt>Sedang ditindak</dt>
         <dd>
-          <span className="angka">{h.verifikasi}</span>
-          <span className="delta">{persenVerifikasi}% antrean</span>
+          <span className="angka">{t.proses}</span>
+          <span className="delta">
+            {t.tanpaBukti ? `${t.tanpaBukti} belum ada bukti` : "bukti lengkap"}
+          </span>
         </dd>
       </div>
-      <div className={h.lewat ? "kritis" : undefined}>
+      <div className={t.lewat ? "kritis" : undefined}>
         <dt>Lewat batas {BATAS_HARI_KERJA} hari</dt>
         <dd>
-          <span className="angka">{h.lewat}</span>
-          <span className="delta">{h.lewat ? "perlu tindakan hari ini" : "tidak ada"}</span>
+          <span className="angka">{t.lewat}</span>
+          <span className="delta">
+            {t.lewat ? "perlu tindakan hari ini" : `tidak ada, ${h.lewat} masih di triase`}
+          </span>
         </dd>
       </div>
       <div>
-        <dt>Selesai dan duplikat</dt>
+        <dt>Sudah ditindak</dt>
         <dd>
-          <span className="angka">{h.selesai + h.duplikat}</span>
+          <span className="angka">{t.selesai}</span>
           <span className="delta">
-            {h.selesai} selesai, {h.duplikat} duplikat
+            {t.umpan} umpan balik terkirim, {h.verifikasi} masih di triase
           </span>
         </dd>
       </div>

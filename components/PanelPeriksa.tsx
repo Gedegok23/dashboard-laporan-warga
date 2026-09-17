@@ -4,9 +4,17 @@ import { useEffect, useState } from "react";
 import { Ikon } from "./Ikon";
 import { DupChip, SlaChip, TahapChip } from "./Lencana";
 import { useMeja } from "./MejaProvider";
+import { PanelPenanganan } from "./PanelPenanganan";
 import { Sorot } from "./Sorot";
 import { BATAS_HARI_KERJA, INSTANSI, LANJUT, TAHAP, petugas } from "@/lib/data";
-import { instansiLaporan, laporCocok, susunLog } from "@/lib/logika";
+import {
+  cariPetugas,
+  cukupBukti,
+  instansiLaporan,
+  laporCocok,
+  penangananLaporan,
+  susunLog,
+} from "@/lib/logika";
 
 export function PanelPeriksa() {
   const { s, kirim, jamKini } = useMeja();
@@ -33,6 +41,10 @@ export function PanelPeriksa() {
   const log = susunLog(l, k);
   const luarSaring = !laporCocok(l, k, s.saring, s.kunci);
   const langkah = l.tahap < 3 && !l.duplikat ? LANJUT[l.tahap] : null;
+  // Penutupan lewat tab Detail memakai aturan bukti yang sama dengan meja penanganan.
+  const langkahTerkunci = langkah?.ke === 3 && !cukupBukti(l);
+  const tugas = penangananLaporan(l);
+  const petugasLapangan = cariPetugas(tugas.petugas);
 
   return (
     <aside className="periksa" id="periksa" aria-label="Rincian laporan terpilih">
@@ -87,7 +99,16 @@ export function PanelPeriksa() {
           onClick={() => kirim({ t: "tab", nilai: "detail" })}
         >
           <Ikon nama="dokumen" ukuran={16} />
-          Detail laporan
+          Detail
+        </button>
+        <button
+          className="tab"
+          role="tab"
+          aria-selected={s.tab === "penanganan"}
+          onClick={() => kirim({ t: "tab", nilai: "penanganan" })}
+        >
+          <Ikon nama="kerja" ukuran={16} />
+          Penanganan
         </button>
         <button
           className="tab"
@@ -203,6 +224,25 @@ export function PanelPeriksa() {
           <dd>
             {l.kanal} &middot; masuk {l.tgl}, {l.jam}
           </dd>
+
+          <dt>Lapangan</dt>
+          <dd>
+            {petugasLapangan ? (
+              <>
+                {petugasLapangan.nama}
+                <br />
+                <span style={{ fontSize: 11.5 }}>
+                  {petugasLapangan.regu}, {tugas.bukti.length} bukti dokumentasi
+                </span>
+              </>
+            ) : (
+              "Belum ada regu yang dikirim"
+            )}
+            <br />
+            <button className="taut" type="button" onClick={() => kirim({ t: "tab", nilai: "penanganan" })}>
+              Buka tab Penanganan
+            </button>
+          </dd>
         </dl>
 
         <div className="pelapor">
@@ -216,13 +256,14 @@ export function PanelPeriksa() {
           <dl>
             <dt>Nama</dt>
             <dd>{s.identitas ? p.namaPenuh : p.nama}</dd>
-            <dt>NIK</dt>
-            <dd>{s.identitas ? p.nikPenuh : p.nik}</dd>
             <dt>WhatsApp</dt>
             <dd>{s.identitas ? p.waPenuh : p.wa}</dd>
-            <dt>Status</dt>
-            <dd>{p.verif}</dd>
           </dl>
+          <p className="jejak">
+            <Ikon nama="bot" ukuran={14} />
+            Agent hanya menanyakan nama dan nomor WhatsApp. NIK dan status verifikasi NIK tidak
+            pernah diminta, jadi tidak ada di berkas laporan.
+          </p>
           <p className="jejak">
             <Ikon nama="perisai" ukuran={14} />
             {s.identitas
@@ -254,6 +295,7 @@ export function PanelPeriksa() {
             <button
               className="btn utama"
               type="button"
+              disabled={langkahTerkunci}
               onClick={() => kirim({ t: "lanjut", jam: jamKini() })}
             >
               <Ikon nama={langkah.ikon} ukuran={17} />
@@ -277,6 +319,16 @@ export function PanelPeriksa() {
             </button>
           ) : null}
         </div>
+        {langkahTerkunci ? (
+          <p className="bantu">
+            Laporan baru bisa ditandai selesai setelah bukti dokumentasi lapangan masuk. Catat
+            buktinya di tab Penanganan.
+          </p>
+        ) : null}
+      </div>
+
+      <div className="panel" hidden={s.tab !== "penanganan"}>
+        <PanelPenanganan k={k} l={l} />
       </div>
 
       <div className="panel" hidden={s.tab !== "log"}>

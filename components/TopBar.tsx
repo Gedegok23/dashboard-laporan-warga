@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Ikon } from "./Ikon";
 import { useMeja } from "./MejaProvider";
@@ -64,6 +65,10 @@ export function TopBar() {
       </div>
 
       <div className="topmeta">
+        <Link className="taut-portal" href="/portal">
+          <Ikon nama="portal" ukuran={15} />
+          Portal warga
+        </Link>
         <span className="tag-contoh">Data contoh</span>
         <span className="mono">Sinkron RDB {jamTampil}</span>
         <span className="petugas">

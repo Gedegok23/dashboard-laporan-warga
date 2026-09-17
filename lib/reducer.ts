@@ -1,6 +1,28 @@
-import { LANJUT, TAHAP, dataAwal, petugas } from "./data";
-import { klasterCocok } from "./logika";
-import type { Arah, Klaster, Laporan, Saring, TabPeriksa, Tahap, Urut } from "./tipe";
+import { LANJUT, TAHAP, TINDAK, dataAwal, petugas } from "./data";
+import {
+  cariPetugas,
+  cukupBukti,
+  klasterCocok,
+  penangananLaporan,
+  penerimaKlaster,
+  saudaraKerja,
+  statusTindak,
+  susunKabar,
+} from "./logika";
+import type {
+  Arah,
+  Bukti,
+  Klaster,
+  Laporan,
+  Penanganan,
+  Saring,
+  SaringTindak,
+  StatusTindak,
+  TabPeriksa,
+  Tahap,
+  Urut,
+  UrutTindak,
+} from "./tipe";
 
 export type Keadaan = {
   data: Klaster[];
@@ -16,6 +38,12 @@ export type Keadaan = {
   arah: Arah;
   /** Indeks klaster yang barisnya sedang dibentangkan. */
   buka: number[];
+  /** Saringan, urutan, dan arah khusus meja penanganan. */
+  tindak: SaringTindak;
+  urutTindak: UrutTindak;
+  arahTindak: Arah;
+  /** Aksi penanganan ikut mengenai laporan mirip di klaster yang sama. */
+  seKlaster: boolean;
   /** Salinan data sebelum aksi terakhir, sumber tombol Batalkan. */
   undo: Klaster[] | null;
   toast: { id: number; pesan: string; adaUndo: boolean } | null;
@@ -28,18 +56,22 @@ export const keadaanAwal: Keadaan = {
   lap: 0,
   saring: "semua",
   kunci: "",
-  tab: "detail",
+  tab: "penanganan",
   identitas: false,
   urut: "waktu",
   arah: "turun",
   buka: [0],
+  tindak: "semua",
+  urutTindak: "status",
+  arahTindak: "naik",
+  seKlaster: false,
   undo: null,
   toast: null,
   nomorToast: 0,
 };
 
 export type Aksi =
-  | { t: "pilih"; kls: number; lap: number }
+  | { t: "pilih"; kls: number; lap: number; tab?: TabPeriksa }
   | { t: "toggle-klaster"; i: number }
   | { t: "saring"; nilai: Saring }
   | { t: "kunci"; nilai: string }
@@ -52,6 +84,17 @@ export type Aksi =
   | { t: "duplikat"; hapus: boolean; jam: string }
   | { t: "kategori"; tujuan: number; jam: string }
   | { t: "instansi"; nama: string; jam: string }
+  | { t: "saring-tindak"; nilai: SaringTindak }
+  | { t: "urut-tindak"; kolom: UrutTindak }
+  | { t: "se-klaster" }
+  | { t: "tugaskan"; petugas: string | null; jam: string }
+  | { t: "jadwal"; nilai: string; jam: string }
+  | { t: "tindak"; nilai: StatusTindak; jam: string }
+  | { t: "catatan"; teks: string }
+  | { t: "bukti-tambah"; jam: string }
+  | { t: "bukti-hapus"; nama: string; jam: string }
+  | { t: "draf"; teks: string }
+  | { t: "kirim-umpan"; jam: string }
   | { t: "undo" }
   | { t: "tutup-toast" };
 
@@ -70,6 +113,23 @@ function catat(l: Laporan, judul: string, ket: string, jam: string) {
   ];
 }
 
+/** Berkas penanganan laporan, dibuat saat pertama kali dipakai. */
+function berkas(l: Laporan): Penanganan {
+  if (!l.penanganan) l.penanganan = { petugas: null, jadwal: null, catatan: "", bukti: [] };
+  return l.penanganan;
+}
+
+/**
+ * Laporan yang kena satu aksi penanganan. Laporan mirip hanya ikut bila petugas
+ * menyalakan sakelar seklaster, dan hanya yang sudah lolos verifikasi.
+ */
+function sasaran(k: Klaster, lap: number, seKlaster: boolean): Laporan[] {
+  const utama = k.lapor[lap];
+  return seKlaster ? [utama, ...saudaraKerja(k, utama)] : [utama];
+}
+
+const sebut = (n: number, tiket: string) => (n > 1 ? `${n} laporan klaster ini` : tiket);
+
 /** Bentangkan setiap klaster yang lolos saringan supaya hasilnya langsung terlihat. */
 const bukaYangCocok = (data: Klaster[], saring: Saring, kunci: string, buka: number[]) => {
   const tambahan = data
@@ -84,10 +144,45 @@ const denganToast = (s: Keadaan, pesan: string, adaUndo = true): Keadaan => ({
   nomorToast: s.nomorToast + 1,
 });
 
+/**
+ * Kabar status yang disusun agent sendiri, bukan diketik admin. Terbit tiap
+ * penanda tindakan berubah, dan ikut tercatat di log supaya petugas tahu persis
+ * kalimat apa yang sudah sampai ke pelapor.
+ *
+ * `sumber` adalah laporan yang berkas penanganannya dipakai menyusun kalimat.
+ * Untuk laporan duplikat, sumbernya laporan yang pekerjaannya membereskan
+ * masalah tersebut.
+ */
+function kabari(l: Laporan, k: Klaster, sumber: Laporan, jam: string) {
+  const status = statusTindak(sumber);
+  const teks = susunKabar(sumber, k, status);
+  l.kabar = [{ status, teks, waktu: `16 Sep ${jam}`, penerima: 1 }, ...(l.kabar ?? [])];
+  l.tambahan = [
+    ...(l.tambahan ?? []),
+    {
+      siapa: "Bot",
+      peran: "bot",
+      ikon: "kirim",
+      jam,
+      teks: `Kabar status dikirim ke pelapor: ${teks}`,
+    },
+  ];
+}
+
+/**
+ * Pindahkan tahap laporan mengikuti penanda tindakan lapangan. Sisa hari kerja
+ * yang sudah minus sengaja tidak diputihkan supaya hitungan lewat batas jujur.
+ */
+function terapkanTindak(l: Laporan, nilai: StatusTindak) {
+  l.tahap = TINDAK[nilai].tahap as Tahap;
+  if (l.tahap === 3) l.sisa = null;
+  else if (l.sisa === null) l.sisa = 2;
+}
+
 export function reducer(s: Keadaan, a: Aksi): Keadaan {
   switch (a.t) {
     case "pilih":
-      return { ...s, kls: a.kls, lap: a.lap, identitas: false };
+      return { ...s, kls: a.kls, lap: a.lap, identitas: false, tab: a.tab ?? s.tab };
 
     case "toggle-klaster": {
       const buka = s.buka.includes(a.i) ? s.buka.filter((x) => x !== a.i) : [...s.buka, a.i];
@@ -106,7 +201,7 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
       };
 
     case "reset-saring":
-      return { ...s, saring: "semua", kunci: "" };
+      return { ...s, saring: "semua", tindak: "semua", kunci: "" };
 
     case "tab":
       return { ...s, tab: a.nilai };
@@ -124,10 +219,13 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
       const l = data[s.kls].lapor[s.lap];
       const langkah = LANJUT[l.tahap];
       if (!langkah || l.duplikat) return s;
+      if (langkah.ke === 3 && !cukupBukti(l)) return s;
+      const sebelum = statusTindak(l);
       l.tahap = langkah.ke;
       if (l.tahap === 3) l.sisa = null;
       else if (l.sisa !== null && l.sisa < 0) l.sisa = 5;
       catat(l, TAHAP[langkah.ke].nama, langkah.catatan, a.jam);
+      if (statusTindak(l) !== sebelum) kabari(l, data[s.kls], l, a.jam);
       return denganToast(
         { ...s, data, undo: s.data },
         `${l.tiket} kini ${TAHAP[langkah.ke].nama.toLowerCase()}.`,
@@ -138,9 +236,11 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
       const data = structuredClone(s.data);
       const l = data[s.kls].lapor[s.lap];
       if (l.tahap === 0 || l.duplikat) return s;
+      const sebelum = statusTindak(l);
       l.tahap = (l.tahap - 1) as Tahap;
       if (l.sisa === null) l.sisa = 2;
       catat(l, TAHAP[l.tahap].nama, `Status dikembalikan ke ${TAHAP[l.tahap].nama.toLowerCase()}`, a.jam);
+      if (statusTindak(l) !== sebelum) kabari(l, data[s.kls], l, a.jam);
       return denganToast(
         { ...s, data, undo: s.data },
         `${l.tiket} dikembalikan ke ${TAHAP[l.tahap].nama.toLowerCase()}.`,
@@ -170,20 +270,20 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
       if (a.tujuan === s.kls) return s;
       const data = structuredClone(s.data);
       const asal = data[s.kls];
-      const sasaran = data[a.tujuan];
+      const sasaranKls = data[a.tujuan];
       const [l] = asal.lapor.splice(s.lap, 1);
-      sasaran.lapor.push(l);
-      catat(l, "Kategori dikoreksi", `Dipindahkan dari ${asal.kategori} ke ${sasaran.kategori}`, a.jam);
+      sasaranKls.lapor.push(l);
+      catat(l, "Kategori dikoreksi", `Dipindahkan dari ${asal.kategori} ke ${sasaranKls.kategori}`, a.jam);
       return denganToast(
         {
           ...s,
           data,
           undo: s.data,
           kls: a.tujuan,
-          lap: sasaran.lapor.length - 1,
+          lap: sasaranKls.lapor.length - 1,
           buka: [...new Set([...s.buka, a.tujuan])],
         },
-        `${l.tiket} dipindahkan ke klaster ${sasaran.id}.`,
+        `${l.tiket} dipindahkan ke klaster ${sasaranKls.id}.`,
       );
     }
 
@@ -195,6 +295,178 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
       l.instansi = a.nama === k.instansi ? null : a.nama;
       catat(l, "Instansi dialihkan", `Penanggung jawab menjadi ${a.nama}`, a.jam);
       return denganToast({ ...s, data, undo: s.data }, `${l.tiket} dialihkan ke ${a.nama}.`);
+    }
+
+    case "saring-tindak":
+      return { ...s, tindak: a.nilai };
+
+    case "urut-tindak":
+      return s.urutTindak === a.kolom
+        ? { ...s, arahTindak: s.arahTindak === "turun" ? "naik" : "turun" }
+        : { ...s, urutTindak: a.kolom, arahTindak: a.kolom === "tanggal" ? "turun" : "naik" };
+
+    case "se-klaster":
+      return { ...s, seKlaster: !s.seKlaster };
+
+    case "tugaskan": {
+      const data = structuredClone(s.data);
+      const k = data[s.kls];
+      const kena = sasaran(k, s.lap, s.seKlaster);
+      const p = cariPetugas(a.petugas);
+      if (penangananLaporan(k.lapor[s.lap]).petugas === a.petugas) return s;
+      for (const l of kena) {
+        berkas(l).petugas = a.petugas;
+        catat(
+          l,
+          p ? "Petugas lapangan ditugaskan" : "Penugasan lapangan dicabut",
+          p ? `${p.nama} dari ${p.regu} dikirim ke lokasi` : "Laporan menunggu regu pengganti",
+          a.jam,
+        );
+      }
+      return denganToast(
+        { ...s, data, undo: s.data },
+        p
+          ? `${p.nama} ditugaskan untuk ${sebut(kena.length, k.lapor[s.lap].tiket)}.`
+          : `Penugasan ${sebut(kena.length, k.lapor[s.lap].tiket)} dicabut.`,
+      );
+    }
+
+    case "jadwal": {
+      const data = structuredClone(s.data);
+      const k = data[s.kls];
+      const kena = sasaran(k, s.lap, s.seKlaster);
+      const nilai = a.nilai.trim() || null;
+      if (penangananLaporan(k.lapor[s.lap]).jadwal === nilai) return s;
+      for (const l of kena) {
+        berkas(l).jadwal = nilai;
+        catat(
+          l,
+          nilai ? "Jadwal lapangan diatur" : "Jadwal lapangan dikosongkan",
+          nilai ? `Regu dijadwalkan ${nilai}` : "Jadwal turun lapangan belum ditetapkan",
+          a.jam,
+        );
+      }
+      return denganToast(
+        { ...s, data, undo: s.data },
+        nilai
+          ? `Jadwal ${sebut(kena.length, k.lapor[s.lap].tiket)} diatur ${nilai}.`
+          : `Jadwal ${sebut(kena.length, k.lapor[s.lap].tiket)} dikosongkan.`,
+      );
+    }
+
+    case "tindak": {
+      const data = structuredClone(s.data);
+      const k = data[s.kls];
+      const utama = k.lapor[s.lap];
+      if (utama.duplikat || utama.tahap === 0) return s;
+      // Menutup laporan tanpa dokumentasi tidak dilayani: bukti itu yang disimpan
+      // RDB sebagai tanda pekerjaan lapangan benar-benar selesai.
+      if (a.nilai === "selesai" && !cukupBukti(utama)) return s;
+      const kena = sasaran(k, s.lap, s.seKlaster).filter((l) => l.tahap > 0);
+      let dikabari = 0;
+      for (const l of kena) {
+        const sebelum = statusTindak(l);
+        if (a.nilai === "selesai" && l.tiket !== utama.tiket && !cukupBukti(l)) {
+          // Satu kali kerja lapangan menutup beberapa tiket mirip, jadi bukti yang
+          // sama ikut disalin ke berkas laporan mirip sebagai rujukan yang sama.
+          berkas(l).bukti = penangananLaporan(utama).bukti.map((b) => ({ ...b }));
+          catat(l, "Bukti dirujuk", `Dokumentasi diambil dari penanganan ${utama.tiket}`, a.jam);
+        }
+        terapkanTindak(l, a.nilai);
+        catat(l, TINDAK[a.nilai].nama, TINDAK[a.nilai].catatan, a.jam);
+        if (statusTindak(l) !== sebelum) {
+          kabari(l, k, l, a.jam);
+          dikabari += 1;
+        }
+      }
+      // Laporan duplikat tidak ikut berubah tahapnya, tapi pelapornya melaporkan
+      // masalah yang sama, jadi tetap dikabari dari berkas penanganan utama.
+      if (s.seKlaster) {
+        for (const d of k.lapor.filter((x) => x.duplikat)) {
+          kabari(d, k, utama, a.jam);
+          dikabari += 1;
+        }
+      }
+      return denganToast(
+        { ...s, data, undo: s.data },
+        `${sebut(kena.length, utama.tiket)} ditandai ${TINDAK[a.nilai].nama.toLowerCase()}. ` +
+          `Agent mengabari ${dikabari} pelapor.`,
+      );
+    }
+
+    case "catatan": {
+      // Mengetik catatan lapangan tidak membuat titik undo sendiri: yang disimpan
+      // adalah isi terakhir, sama seperti kolom catatan di RDB.
+      const data = structuredClone(s.data);
+      berkas(data[s.kls].lapor[s.lap]).catatan = a.teks;
+      return { ...s, data };
+    }
+
+    case "bukti-tambah": {
+      const data = structuredClone(s.data);
+      const l = data[s.kls].lapor[s.lap];
+      const p = cariPetugas(penangananLaporan(l).petugas);
+      if (!p) return s;
+      const b = berkas(l);
+      const urutan = String(b.bukti.length + 1).padStart(2, "0");
+      const berkasBukti: Bukti = {
+        nama: `IMG-20260916-${a.jam.replace(":", "")}-lapangan-${urutan}.jpg`,
+        ukuran: "2,0 MB",
+        jam: a.jam,
+        oleh: p.nama,
+        gps: l.koordinat,
+      };
+      b.bukti = [...b.bukti, berkasBukti];
+      catat(l, "Bukti dokumentasi masuk", `${berkasBukti.nama} diunggah ${p.nama}`, a.jam);
+      return denganToast(
+        { ...s, data, undo: s.data },
+        `Bukti ${berkasBukti.nama} tersimpan di berkas ${l.tiket}.`,
+      );
+    }
+
+    case "bukti-hapus": {
+      const data = structuredClone(s.data);
+      const l = data[s.kls].lapor[s.lap];
+      const b = berkas(l);
+      if (!b.bukti.some((x) => x.nama === a.nama)) return s;
+      b.bukti = b.bukti.filter((x) => x.nama !== a.nama);
+      catat(l, "Bukti dokumentasi dicabut", `${a.nama} dikeluarkan dari berkas`, a.jam);
+      return denganToast({ ...s, data, undo: s.data }, `Bukti ${a.nama} dicabut dari ${l.tiket}.`);
+    }
+
+    case "draf": {
+      const data = structuredClone(s.data);
+      data[s.kls].lapor[s.lap].draf = a.teks;
+      return { ...s, data };
+    }
+
+    case "kirim-umpan": {
+      const data = structuredClone(s.data);
+      const k = data[s.kls];
+      const utama = k.lapor[s.lap];
+      const teks = (utama.draf ?? "").trim();
+      if (!teks) return s;
+      const kena = s.seKlaster ? [utama, ...penerimaKlaster(k, utama)] : [utama];
+      const catatanUmpan = {
+        teks,
+        oleh: `Admin ${utama.instansi || k.instansi}`,
+        waktu: `16 Sep ${a.jam}`,
+        penerima: kena.length,
+      };
+      for (const l of kena) {
+        l.umpan = [catatanUmpan, ...(l.umpan ?? [])];
+        l.draf = "";
+        catat(
+          l,
+          "Umpan balik diterbitkan",
+          `Balasan instansi tampil di portal dan dikirim agent ke ${kena.length} pelapor`,
+          a.jam,
+        );
+      }
+      return denganToast(
+        { ...s, data, undo: s.data },
+        `Umpan balik terbit di portal dan dikirim agent ke ${kena.length} pelapor.`,
+      );
     }
 
     case "undo":

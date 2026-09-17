@@ -1,4 +1,10 @@
-import type { Klaster, NamaIkon, Tahap } from "./tipe";
+import type {
+  Klaster,
+  NamaIkon,
+  PetugasLapangan,
+  StatusTindak,
+  Tahap,
+} from "./tipe";
 
 /** Petugas yang sedang masuk. Dipakai untuk jejak audit dan baris log. */
 export const petugas = {
@@ -45,6 +51,103 @@ export const INSTANSI = [
   "Satuan Polisi Pamong Praja",
 ];
 
+/**
+ * Penanda tindakan yang dipakai meja penanganan. Urutannya sama dengan tahap
+ * laporan supaya satu perubahan status hanya punya satu arti di seluruh meja.
+ */
+export const TINDAK: Record<
+  StatusTindak,
+  { nama: string; pendek: string; ikon: NamaIkon; tahap: Tahap; catatan: string }
+> = {
+  belum: {
+    nama: "Belum ditindak",
+    pendek: "Belum",
+    ikon: "lingkaran",
+    tahap: 1,
+    catatan: "Penanganan lapangan dikembalikan ke antrean instansi",
+  },
+  proses: {
+    nama: "Sedang ditindak",
+    pendek: "Sedang",
+    ikon: "proses",
+    tahap: 2,
+    catatan: "Regu lapangan sedang menangani laporan ini",
+  },
+  selesai: {
+    nama: "Sudah ditindak",
+    pendek: "Sudah",
+    ikon: "selesai",
+    tahap: 3,
+    catatan: "Penanganan lapangan dinyatakan selesai dengan bukti dokumentasi",
+  },
+};
+
+/** Minimal satu bukti dokumentasi sebelum laporan boleh ditutup di RDB. */
+export const BUKTI_MINIMAL = 1;
+
+/**
+ * Regu lapangan yang bisa dikirim admin instansi. Bukan data pegawai
+ * sungguhan: nama dan nomor dikarang, unit mengikuti struktur nyata.
+ */
+export const PETUGAS_LAPANGAN: PetugasLapangan[] = [
+  {
+    id: "PTG-11",
+    nama: "Dadang Suherman",
+    regu: "Regu tambal cepat 2",
+    instansi: "Dinas Bina Marga dan Penataan Ruang",
+    wa: "+62 813-2207-5510",
+  },
+  {
+    id: "PTG-14",
+    nama: "Eka Nurjanah",
+    regu: "Regu pemeliharaan trotoar",
+    instansi: "Dinas Bina Marga dan Penataan Ruang",
+    wa: "+62 812-6641-8123",
+  },
+  {
+    id: "PTG-23",
+    nama: "Iwan Gunawan",
+    regu: "Regu angkut TPS wilayah barat",
+    instansi: "Dinas Lingkungan Hidup dan Kebersihan",
+    wa: "+62 878-3390-2274",
+  },
+  {
+    id: "PTG-27",
+    nama: "Nanang Sutisna",
+    regu: "Regu sapu jalan malam",
+    instansi: "Dinas Lingkungan Hidup dan Kebersihan",
+    wa: "+62 856-1148-9067",
+  },
+  {
+    id: "PTG-35",
+    nama: "Rizal Maulana",
+    regu: "Regu PJU sektor utara",
+    instansi: "Dinas Perhubungan",
+    wa: "+62 819-4402-3318",
+  },
+  {
+    id: "PTG-41",
+    nama: "Surya Adiputra",
+    regu: "Regu drainase Kiaracondong",
+    instansi: "Dinas Pekerjaan Umum",
+    wa: "+62 811-2295-7740",
+  },
+  {
+    id: "PTG-48",
+    nama: "Heru Purnomo",
+    regu: "Regu pangkas pohon 1",
+    instansi: "DPKP3",
+    wa: "+62 877-5063-4192",
+  },
+  {
+    id: "PTG-52",
+    nama: "Tuti Herawati",
+    regu: "Regu penertiban Andir",
+    instansi: "Satuan Polisi Pamong Praja",
+    wa: "+62 838-7719-2205",
+  },
+];
+
 /** Batas tindak lanjut yang berlaku di meja ini. */
 export const BATAS_HARI_KERJA = 5;
 
@@ -67,19 +170,54 @@ export const harian: [string, number][] = [
 ];
 
 /**
- * Data contoh. Bukan laporan warga sungguhan: nama, NIK, dan nomor telepon
- * dikarang, koordinat menunjuk ke ruas jalan nyata di Kota Bandung.
+ * Data contoh. Bukan laporan warga sungguhan: nama dan nomor WhatsApp dikarang,
+ * koordinat menunjuk ke ruas jalan nyata di Kota Bandung. Agent hanya menanyakan
+ * nama dan nomor WhatsApp, jadi tidak ada NIK yang tersimpan di berkas laporan.
  */
 export const dataAwal: Klaster[] = [
   {
     id: "KLS-0031",
     kategori: "Jalan rusak dan berlubang",
+    jenis: "infrastruktur",
     wilayah: "Sukajadi, Cicendo, Gedebage",
     instansi: "Dinas Bina Marga dan Penataan Ruang",
     ambang: 0.85,
     lapor: [
       {
         tiket: "TKT-260916-0473",
+        tambahan: [
+          {
+            siapa: "Bot",
+            peran: "bot",
+            ikon: "kirim",
+            jam: "16:45",
+            teks: "Kabar status dikirim ke pelapor: Laporan Anda sedang ditangani Regu tambal cepat 2 dari Dinas Bina Marga dan Penataan Ruang. Jadwal turun lapangan 17 Sep 2026, 07.00. Kami kabari lagi begitu pekerjaannya selesai.",
+          },
+        ],
+        kabar: [
+          {
+            status: "proses",
+            teks:
+              "Laporan Anda sedang ditangani Regu tambal cepat 2 dari Dinas Bina Marga dan Penataan Ruang. Jadwal turun lapangan 17 Sep 2026, 07.00. Kami kabari lagi begitu pekerjaannya selesai.",
+            waktu: "16 Sep 16:45",
+            penerima: 1,
+          },
+        ],
+        penanganan: {
+          petugas: "PTG-11",
+          jadwal: "17 Sep 2026, 07.00",
+          catatan:
+            "Tutup jalur lambat sebelah kiri saat penambalan. Volume lubang kira-kira 1,2 m2, bawa hotmix cadangan karena sekitarnya sudah retak buaya.",
+          bukti: [
+            {
+              nama: "IMG-20260916-1642-sebelum.jpg",
+              ukuran: "1,8 MB",
+              jam: "16:42",
+              oleh: "Dadang Suherman",
+              gps: "-6.89216, 107.58758",
+            },
+          ],
+        },
         tahap: 2,
         sisa: 2,
         ts: 2609161402,
@@ -103,11 +241,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Rangga N.",
           namaPenuh: "Rangga Nurhakim",
-          nik: "3273••••••••0006",
-          nikPenuh: "3273041709940006",
           wa: "+62 812-••••-4471",
           waPenuh: "+62 812-9033-4471",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Ditindaklanjuti", "Regu tambal cepat dijadwalkan 17 Sep pagi", "16 Sep 16:40"],
@@ -140,11 +275,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Siti M.",
           namaPenuh: "Siti Maryani",
-          nik: "3273••••••••0142",
-          nikPenuh: "3273025508880142",
           wa: "+62 857-••••-1120",
           waPenuh: "+62 857-6644-1120",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Diteruskan", "Disposisi ke Bidang Pemeliharaan Jalan", "16 Sep 08:10"],
@@ -153,6 +285,7 @@ export const dataAwal: Klaster[] = [
       },
       {
         tiket: "TKT-260915-0359",
+        duplikat: true,
         tahap: 0,
         sisa: 3,
         ts: 2609151107,
@@ -176,11 +309,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Wulan D.",
           namaPenuh: "Wulan Damayanti",
-          nik: "3273••••••••0208",
-          nikPenuh: "3273046201900208",
           wa: "+62 895-••••-3067",
           waPenuh: "+62 895-2214-3067",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           [
@@ -192,6 +322,62 @@ export const dataAwal: Klaster[] = [
       },
       {
         tiket: "TKT-260914-0201",
+        kabar: [
+          {
+            status: "selesai",
+            teks:
+              "Laporan Anda sudah selesai ditangani Regu tambal cepat 2 dari Dinas Bina Marga dan Penataan Ruang, dengan 2 bukti dokumentasi dari lapangan. Kalau masalahnya muncul lagi di titik yang sama, balas pesan ini dengan foto terbaru.",
+            waktu: "15 Sep 11:10",
+            penerima: 1,
+          },
+        ],
+        tambahan: [
+          {
+            siapa: "Bot",
+            peran: "bot",
+            ikon: "kirim",
+            jam: "11:10",
+            teks: "Kabar status dikirim ke pelapor: Laporan Anda sudah selesai ditangani Regu tambal cepat 2 dari Dinas Bina Marga dan Penataan Ruang, dengan 2 bukti dokumentasi dari lapangan. Kalau masalahnya muncul lagi di titik yang sama, balas pesan ini dengan foto terbaru.",
+          },
+          {
+            siapa: "Warga",
+            peran: "warga",
+            ikon: "warga",
+            jam: "15:42",
+            teks: "Membalas kabar penyelesaian.",
+            mentah: "udah rata pak, makasih. tapi garis putihnya belum dicat ulang",
+          },
+        ],
+        penanganan: {
+          petugas: "PTG-11",
+          jadwal: "15 Sep 2026, 07.00",
+          catatan: "Penambalan dua titik selesai dalam satu kali kerja, tidak perlu penutupan jalur.",
+          bukti: [
+            {
+              nama: "IMG-20260915-0731-sebelum.jpg",
+              ukuran: "1,9 MB",
+              jam: "07:31",
+              oleh: "Dadang Suherman",
+              gps: "-6.94118, 107.69042",
+            },
+            {
+              nama: "IMG-20260915-1104-sesudah.jpg",
+              ukuran: "2,0 MB",
+              jam: "11:04",
+              oleh: "Dadang Suherman",
+              gps: "-6.94120, 107.69039",
+            },
+          ],
+        },
+        umpan: [
+          {
+            teks:
+              "Lubang di ruas ini sudah ditambal regu tambal cepat pada 15 September dan jalur kembali normal. Bila dalam dua minggu muncul retak baru di titik yang sama, balas pesan ini dengan foto terbaru supaya kami jadwalkan pelapisan ulang.",
+            oleh: "Admin Dinas Bina Marga dan Penataan Ruang",
+            waktu: "15 Sep 13:20",
+            penerima: 4,
+          },
+        ],
         tahap: 3,
         sisa: null,
         ts: 2609140921,
@@ -214,11 +400,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Bayu P.",
           namaPenuh: "Bayu Prasetya",
-          nik: "3273••••••••0033",
-          nikPenuh: "3273011203910033",
           wa: "+62 811-••••-7781",
           waPenuh: "+62 811-2058-7781",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Selesai", "Penambalan selesai, foto hasil diunggah petugas lapangan", "15 Sep 11:05"],
@@ -232,6 +415,7 @@ export const dataAwal: Klaster[] = [
   {
     id: "KLS-0044",
     kategori: "Sampah menumpuk di TPS",
+    jenis: "lingkungan",
     wilayah: "Babakan Ciparay, Bandung Kulon",
     instansi: "Dinas Lingkungan Hidup dan Kebersihan",
     ambang: 0.88,
@@ -260,11 +444,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Dewi R.",
           namaPenuh: "Dewi Rahmawati",
-          nik: "3273••••••••0087",
-          nikPenuh: "3273044411950087",
           wa: "+62 813-••••-2290",
           waPenuh: "+62 813-7712-2290",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Perlu verifikasi", "Batas tindak lanjut 5 hari kerja terlampaui 2 hari", "16 Sep 11:37"],
@@ -289,16 +470,46 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Hendra S.",
           namaPenuh: "Hendra Saputra",
-          nik: "3273••••••••0119",
-          nikPenuh: "3273010806870119",
           wa: "+62 878-••••-6543",
           waPenuh: "+62 878-3391-6543",
-          verif: "Belum terverifikasi",
         },
         riwayat: [["Perlu verifikasi", "Bot meminta foto, warga belum mengirim", "16 Sep 09:12"]],
       },
       {
         tiket: "TKT-260913-0311",
+        tambahan: [
+          {
+            siapa: "Bot",
+            peran: "bot",
+            ikon: "kirim",
+            jam: "09:22",
+            teks: "Kabar status dikirim ke pelapor: Laporan Anda sedang ditangani Regu angkut TPS wilayah barat dari Dinas Lingkungan Hidup dan Kebersihan. Jadwal turun lapangan 17 Sep 2026, 05.30. Kami kabari lagi begitu pekerjaannya selesai.",
+          },
+        ],
+        kabar: [
+          {
+            status: "proses",
+            teks:
+              "Laporan Anda sedang ditangani Regu angkut TPS wilayah barat dari Dinas Lingkungan Hidup dan Kebersihan. Jadwal turun lapangan 17 Sep 2026, 05.30. Kami kabari lagi begitu pekerjaannya selesai.",
+            waktu: "16 Sep 09:22",
+            penerima: 1,
+          },
+        ],
+        penanganan: {
+          petugas: "PTG-23",
+          jadwal: "17 Sep 2026, 05.30",
+          catatan:
+            "Butuh dua rit karena TPS sudah meluber ke bahu jalan. Koordinasi dulu dengan petugas pasar supaya lapak pagi tidak terhalang truk.",
+          bukti: [
+            {
+              nama: "IMG-20260916-0918-tps.jpg",
+              ukuran: "2,2 MB",
+              jam: "09:18",
+              oleh: "Iwan Gunawan",
+              gps: "-6.93382, 107.56914",
+            },
+          ],
+        },
         tahap: 2,
         sisa: 1,
         ts: 2609131628,
@@ -321,11 +532,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Asep K.",
           namaPenuh: "Asep Kurniawan",
-          nik: "3273••••••••0176",
-          nikPenuh: "3273010209830176",
           wa: "+62 821-••••-5512",
           waPenuh: "+62 821-4490-5512",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Ditindaklanjuti", "Penggantian bak dijadwalkan pekan ini", "15 Sep 09:15"],
@@ -338,6 +546,7 @@ export const dataAwal: Klaster[] = [
   {
     id: "KLS-0052",
     kategori: "Lampu penerangan jalan mati",
+    jenis: "keamanan",
     wilayah: "Coblong, Cidadap",
     instansi: "Dinas Perhubungan",
     ambang: 0.8,
@@ -366,11 +575,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Maya A.",
           namaPenuh: "Maya Anggraeni",
-          nik: "3273••••••••0064",
-          nikPenuh: "3273046302920064",
           wa: "+62 812-••••-8830",
           waPenuh: "+62 812-4417-8830",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Diteruskan", "Disposisi ke UPT Penerangan Jalan Umum", "16 Sep 07:55"],
@@ -401,11 +607,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Fajar H.",
           namaPenuh: "Fajar Hidayat",
-          nik: "3273••••••••0150",
-          nikPenuh: "3273012811860150",
           wa: "+62 856-••••-7724",
           waPenuh: "+62 856-1187-7724",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Diteruskan", "Disposisi ke UPT Penerangan Jalan Umum", "15 Sep 08:30"],
@@ -436,11 +639,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Lina S.",
           namaPenuh: "Lina Suryani",
-          nik: "3273••••••••0194",
-          nikPenuh: "3273045704910194",
           wa: "+62 813-••••-9902",
           waPenuh: "+62 813-6650-9902",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Perlu verifikasi", "Batas tindak lanjut 5 hari kerja terlampaui 1 hari", "12 Sep 20:03"],
@@ -451,12 +651,15 @@ export const dataAwal: Klaster[] = [
   {
     id: "KLS-0058",
     kategori: "Saluran tersumbat dan genangan",
+    jenis: "infrastruktur",
     wilayah: "Kiaracondong, Batununggal",
     instansi: "Dinas Pekerjaan Umum",
     ambang: 0.82,
     lapor: [
       {
         tiket: "TKT-260916-0431",
+        draf:
+          "Laporan genangan di ruas ini sudah kami terima dan dijadwalkan untuk pengecekan drainase.",
         tahap: 1,
         sisa: 4,
         ts: 2609160726,
@@ -480,11 +683,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Teguh W.",
           namaPenuh: "Teguh Wibowo",
-          nik: "3273••••••••0055",
-          nikPenuh: "3273012310890055",
           wa: "+62 856-••••-3312",
           waPenuh: "+62 856-7028-3312",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Diteruskan", "Disposisi ke Bidang Sumber Daya Air", "16 Sep 09:40"],
@@ -493,6 +693,31 @@ export const dataAwal: Klaster[] = [
       },
       {
         tiket: "TKT-260914-0296",
+        tambahan: [
+          {
+            siapa: "Bot",
+            peran: "bot",
+            ikon: "kirim",
+            jam: "10:04",
+            teks: "Kabar status dikirim ke pelapor: Laporan Anda sedang ditangani Regu drainase Kiaracondong dari Dinas Pekerjaan Umum. Jadwal turun lapangan 18 Sep 2026, 08.00. Kami kabari lagi begitu pekerjaannya selesai.",
+          },
+        ],
+        kabar: [
+          {
+            status: "proses",
+            teks:
+              "Laporan Anda sedang ditangani Regu drainase Kiaracondong dari Dinas Pekerjaan Umum. Jadwal turun lapangan 18 Sep 2026, 08.00. Kami kabari lagi begitu pekerjaannya selesai.",
+            waktu: "16 Sep 10:04",
+            penerima: 1,
+          },
+        ],
+        penanganan: {
+          petugas: "PTG-41",
+          jadwal: "18 Sep 2026, 08.00",
+          catatan:
+            "Perlu mesin sedot lumpur, gorong-gorong tersumbat sampai kedalaman 60 cm. Belum ada dokumentasi lapangan yang masuk.",
+          bukti: [],
+        },
         tahap: 2,
         sisa: 0,
         ts: 2609141510,
@@ -515,11 +740,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Rina O.",
           namaPenuh: "Rina Oktaviani",
-          nik: "3273••••••••0163",
-          nikPenuh: "3273044210900163",
           wa: "+62 878-••••-1188",
           waPenuh: "+62 878-5502-1188",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Ditindaklanjuti", "Regu pengerukan dijadwalkan 17 Sep", "16 Sep 10:25"],
@@ -532,6 +754,7 @@ export const dataAwal: Klaster[] = [
   {
     id: "KLS-0063",
     kategori: "Parkir liar di badan jalan",
+    jenis: "keamanan",
     wilayah: "Andir, Cicendo",
     instansi: "Satuan Polisi Pamong Praja",
     ambang: 0.78,
@@ -560,11 +783,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Ika F.",
           namaPenuh: "Ika Fitriani",
-          nik: "3273••••••••0072",
-          nikPenuh: "3273045012960072",
           wa: "+62 819-••••-4408",
           waPenuh: "+62 819-5523-4408",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           [
@@ -598,11 +818,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Gilang R.",
           namaPenuh: "Gilang Ramadhan",
-          nik: "3273••••••••0187",
-          nikPenuh: "3273011506940187",
           wa: "+62 852-••••-3340",
           waPenuh: "+62 852-7719-3340",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Diteruskan", "Disposisi ke Bidang Penegakan Perda dan Dishub", "14 Sep 09:12"],
@@ -614,12 +831,69 @@ export const dataAwal: Klaster[] = [
   {
     id: "KLS-0067",
     kategori: "Pohon tumbang dan dahan rawan",
+    jenis: "lingkungan",
     wilayah: "Antapani, Arcamanik",
     instansi: "DPKP3",
     ambang: 0.86,
     lapor: [
       {
         tiket: "TKT-260914-0288",
+        kabar: [
+          {
+            status: "selesai",
+            teks:
+              "Laporan Anda sudah selesai ditangani Regu pangkas pohon 1 dari DPKP3, dengan 2 bukti dokumentasi dari lapangan. Kalau masalahnya muncul lagi di titik yang sama, balas pesan ini dengan foto terbaru.",
+            waktu: "15 Sep 09:48",
+            penerima: 1,
+          },
+        ],
+        tambahan: [
+          {
+            siapa: "Bot",
+            peran: "bot",
+            ikon: "kirim",
+            jam: "09:48",
+            teks: "Kabar status dikirim ke pelapor: Laporan Anda sudah selesai ditangani Regu pangkas pohon 1 dari DPKP3, dengan 2 bukti dokumentasi dari lapangan. Kalau masalahnya muncul lagi di titik yang sama, balas pesan ini dengan foto terbaru.",
+          },
+          {
+            siapa: "Warga",
+            peran: "warga",
+            ikon: "warga",
+            jam: "16:20",
+            teks: "Membalas kabar penyelesaian.",
+            mentah: "sudah bersih. pohon sebelahnya miring juga, perlu dilaporkan terpisah ga?",
+          },
+        ],
+        penanganan: {
+          petugas: "PTG-48",
+          jadwal: "15 Sep 2026, 06.00",
+          catatan: "Dahan rawan dipangkas sampai batas aman kabel PLN, sisa potongan diangkut hari yang sama.",
+          bukti: [
+            {
+              nama: "IMG-20260915-0612-dahan.jpg",
+              ukuran: "2,4 MB",
+              jam: "06:12",
+              oleh: "Heru Purnomo",
+              gps: "-6.91549, 107.68118",
+            },
+            {
+              nama: "IMG-20260915-0940-bersih.jpg",
+              ukuran: "2,1 MB",
+              jam: "09:40",
+              oleh: "Heru Purnomo",
+              gps: "-6.91547, 107.68120",
+            },
+          ],
+        },
+        umpan: [
+          {
+            teks:
+              "Dahan yang menggantung di atas jalur pejalan kaki sudah dipangkas regu DPKP3 pada 15 September, potongan juga sudah diangkut. Pohon induknya kami masukkan ke jadwal pemeriksaan rutin triwulan berikutnya.",
+            oleh: "Admin DPKP3",
+            waktu: "15 Sep 15:05",
+            penerima: 2,
+          },
+        ],
         tahap: 3,
         sisa: null,
         ts: 2609141812,
@@ -642,11 +916,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Nurul H.",
           namaPenuh: "Nurul Hasanah",
-          nik: "3273••••••••0091",
-          nikPenuh: "3273046607930091",
           wa: "+62 852-••••-9075",
           waPenuh: "+62 852-1164-9075",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           ["Selesai", "Pemangkasan selesai, trotoar dibersihkan", "15 Sep 10:20"],
@@ -679,11 +950,8 @@ export const dataAwal: Klaster[] = [
         pelapor: {
           nama: "Yusuf A.",
           namaPenuh: "Yusuf Abdillah",
-          nik: "3273••••••••0211",
-          nikPenuh: "3273010703920211",
           wa: "+62 811-••••-4408",
           waPenuh: "+62 811-7736-4408",
-          verif: "Terverifikasi NIK",
         },
         riwayat: [
           [

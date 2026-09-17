@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Ikon } from "./Ikon";
 import { harian } from "@/lib/data";
 
 const W = 560;
-const H = 128;
+const H = 96;
 const KIRI = 26;
 const KANAN = 6;
 const ATAS = 10;
@@ -43,14 +44,17 @@ export function GrafikHarian() {
   const [aktif, setAktif] = useState<number | null>(null);
   const b = aktif === null ? null : batang[aktif];
 
+  const terakhir = harian[harian.length - 1];
+
   return (
-    <section className="grafik">
-      <header>
+    <details className="grafik" open>
+      <summary>
+        <Ikon nama="buka" ukuran={16} />
         <h2>Laporan masuk per hari</h2>
-        <p className="ket">
-          Seluruh kanal Kota Bandung &middot; puncak {puncak[0]} dengan {puncak[1]} laporan
-        </p>
-      </header>
+        <span className="ket">
+          {terakhir[1]} laporan hari ini, puncak 14 hari {puncak[0]} dengan {puncak[1]} laporan
+        </span>
+      </summary>
 
       <div className="plot" onMouseLeave={() => setAktif(null)}>
         <svg
@@ -130,6 +134,6 @@ export function GrafikHarian() {
           ) : null}
         </div>
       </div>
-    </section>
+    </details>
   );
 }
