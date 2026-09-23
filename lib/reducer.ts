@@ -486,8 +486,23 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
     case "muat": {
       // Server memegang kebenaran. Pilihan petugas (laporan mana yang terbuka,
       // saringan, tab) dipertahankan; isinya yang diganti.
-      const kls = Math.min(s.kls, Math.max(0, a.data.length - 1));
-      const lap = Math.min(s.lap, Math.max(0, (a.data[kls]?.lapor.length ?? 1) - 1));
+      //
+      // Laporan yang terbuka dicari kembali lewat nomor tiketnya, bukan lewat
+      // indeks: data server bisa datang dengan urutan berbeda, dan indeks yang
+      // dipertahankan akan diam-diam memindahkan panel ke laporan lain.
+      const tiket = s.data[s.kls]?.lapor[s.lap]?.tiket;
+      let kls = Math.min(s.kls, Math.max(0, a.data.length - 1));
+      let lap = Math.min(s.lap, Math.max(0, (a.data[kls]?.lapor.length ?? 1) - 1));
+      if (tiket) {
+        for (let i = 0; i < a.data.length; i += 1) {
+          const j = a.data[i].lapor.findIndex((l) => l.tiket === tiket);
+          if (j >= 0) {
+            kls = i;
+            lap = j;
+            break;
+          }
+        }
+      }
       return { ...s, data: a.data, kls, lap, undo: null };
     }
 
