@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { Ikon } from "./Ikon";
 import { useMeja } from "./MejaProvider";
 import { petugas } from "@/lib/data";
+import { KANAL, PEMERINTAH } from "@/lib/kota";
 
 export function TopBar() {
   const { s, kirim, jamTampil } = useMeja();
@@ -31,7 +32,9 @@ export function TopBar() {
         </div>
         <div>
           <h1>Meja Laporan Warga</h1>
-          <p className="sub">Pemerintah Kota Bandung &middot; kanal bot WhatsApp dan web</p>
+          <p className="sub">
+            {PEMERINTAH} &middot; kanal {KANAL}
+          </p>
         </div>
       </div>
 

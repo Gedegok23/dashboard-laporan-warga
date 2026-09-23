@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { KANAL_RESMI, KOTA, PEMERINTAH } from "@/lib/kota";
 
 export const metadata: Metadata = {
   title: { default: "Portal Laporan Warga", template: "%s | Portal Laporan Warga" },
   description:
-    "Cari laporan warga Kota Bandung dan lihat sampai mana penanganannya, dari pengaduan sampai selesai.",
+    `Cari laporan warga Kota ${KOTA} dan lihat sampai mana penanganannya, dari pengaduan sampai selesai.`,
 };
 
 const TAUTAN = [
@@ -31,7 +32,7 @@ export default function TataLetakPortal({ children }: LayoutProps<"/portal">) {
             </div>
             <div>
               <p className="pnama">Portal Laporan Warga</p>
-              <p className="sub">Pemerintah Kota Bandung</p>
+              <p className="sub">{PEMERINTAH}</p>
             </div>
           </Link>
 
@@ -61,7 +62,7 @@ export default function TataLetakPortal({ children }: LayoutProps<"/portal">) {
           mirip dikelompokkan jadi satu supaya masalah yang sama tidak dikerjakan berkali-kali.
         </p>
         <p>
-          Belum menemukan laporan Anda? Kirim lewat bot WhatsApp kanal resmi Kota Bandung.{" "}
+          Belum menemukan laporan Anda? Kirim lewat {KANAL_RESMI} kanal resmi Kota {KOTA}.{" "}
           <Link href="/">Meja petugas</Link>
         </p>
       </footer>

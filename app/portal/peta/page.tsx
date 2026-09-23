@@ -3,10 +3,11 @@ import { Ikon } from "@/components/Ikon";
 import { PetaKlien } from "@/components/portal/PetaKlien";
 import { JENIS, URUT_JENIS } from "@/lib/kategori";
 import { semuaLaporanPortal } from "@/lib/sumber";
+import { KOTA } from "@/lib/kota";
 
 export const metadata: Metadata = {
   title: "Peta",
-  description: "Sebaran laporan warga Kota Bandung di peta, ditampilkan secara umum.",
+  description: `Sebaran laporan warga Kota ${KOTA} di peta, ditampilkan secara umum.`,
 };
 
 export const revalidate = 0;
@@ -20,7 +21,7 @@ export default async function HalamanPeta() {
       <section className="phalaman">
         <h2>Peta Laporan</h2>
         <p className="plead">
-          Sebaran {daftar.length} laporan warga di Kota Bandung. Titik dibulatkan ke sekitar seratus
+          Sebaran {daftar.length} laporan warga di Kota {KOTA}. Titik dibulatkan ke sekitar seratus
           meter, jadi peta menunjukkan ruas jalannya, bukan alamat persis pelapor.
         </p>
       </section>

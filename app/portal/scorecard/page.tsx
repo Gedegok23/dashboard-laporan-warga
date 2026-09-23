@@ -3,10 +3,11 @@ import { Ikon } from "@/components/Ikon";
 import { BATAS_HARI_KERJA } from "@/lib/data";
 import { scorecardInstansi } from "@/lib/logika";
 import { isiMeja } from "@/lib/sumber";
+import { KOTA } from "@/lib/kota";
 
 export const metadata: Metadata = {
   title: "Scorecard",
-  description: "Perbandingan penanganan laporan warga antar instansi Kota Bandung.",
+  description: `Perbandingan penanganan laporan warga antar instansi Kota ${KOTA}.`,
 };
 
 export const revalidate = 0;

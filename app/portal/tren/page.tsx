@@ -5,10 +5,11 @@ import { JENIS } from "@/lib/kategori";
 import { sebaranJenis } from "@/lib/logika";
 import { isiHarian, isiMeja, isiPortal } from "@/lib/sumber";
 import type { Jenis } from "@/lib/tipe";
+import { KOTA } from "@/lib/kota";
 
 export const metadata: Metadata = {
   title: "Tren & Statistik",
-  description: "Laporan warga Kota Bandung yang masuk per hari dan sebarannya menurut jenis masalah.",
+  description: `Laporan warga Kota ${KOTA} yang masuk per hari dan sebarannya menurut jenis masalah.`,
 };
 
 export const revalidate = 0;
@@ -59,7 +60,7 @@ export default async function Tren() {
       <section className="panel-grafik">
         <header>
           <h3>Laporan masuk per hari</h3>
-          <p>Seluruh kanal Kota Bandung, 14 hari sampai 16 September 2026.</p>
+          <p>Seluruh kanal Kota {KOTA}, 14 hari terakhir.</p>
         </header>
         <GrafikMasuk harian={harian} />
       </section>

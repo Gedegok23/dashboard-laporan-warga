@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { CekStatus } from "@/components/portal/CekStatus";
 import { semuaLaporanPortal } from "@/lib/sumber";
+import { KOTA } from "@/lib/kota";
 
 export const metadata: Metadata = {
   title: "Cek Status",
-  description: "Lacak satu laporan warga Kota Bandung dengan nomor tiketnya.",
+  description: `Lacak satu laporan warga Kota ${KOTA} dengan nomor tiketnya.`,
 };
 
 export const revalidate = 0;
