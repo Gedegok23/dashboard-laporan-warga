@@ -51,6 +51,8 @@ type BarisDb = {
   klaster_wilayah: string | null;
   foto_pelapor: string | null;
   foto_berkas_id: number | null;
+  latitude: string | null;
+  longitude: string | null;
   bukti: number;
   bukti_berkas: number[] | null;
   petugas_nama: string | null;
@@ -67,6 +69,7 @@ type BarisDb = {
 const SQL = `
   SELECT l.id, l.kode_lacak, l.judul, l.deskripsi, l.status, l.jenis, l.lokasi,
          l.kelurahan, l.kecamatan, l.duplikat, l.created_at, l.foto_pelapor, l.foto_berkas_id,
+         l.latitude, l.longitude,
          i.nama              AS instansi,
          k.kategori          AS kategori,
          k.kode              AS klaster_kode,
@@ -140,6 +143,16 @@ function perjalananDb(r: BarisDb): Tonggak[] {
   ];
 }
 
+/**
+ * Bulatkan koordinat ke tiga angka di belakang koma, kira-kira seratus meter.
+ * Portal menunjukkan ruas jalannya, bukan alamat persis pelapor.
+ */
+function kasarkanAngka(lat: string | null, lng: string | null): [number, number] {
+  if (!lat || !lng) return [0, 0];
+  const b = (n: number) => Math.round(n * 1000) / 1000;
+  return [b(Number(lat)), b(Number(lng))];
+}
+
 const JENIS_SAH: Jenis[] = ["infrastruktur", "lingkungan", "keamanan", "kesehatan", "sosial", "lainnya"];
 const jenisDari = (v: string | null): Jenis =>
   JENIS_SAH.includes(v as Jenis) ? (v as Jenis) : "lainnya";
@@ -165,7 +178,7 @@ function keLaporanPortal(r: BarisDb, serupa: number): LaporanPortal {
     status,
     duplikat: Boolean(r.duplikat),
     serupa,
-    titik: [0, 0],
+    titik: kasarkanAngka(r.latitude, r.longitude),
     fotoPelapor: Boolean(r.foto_pelapor || r.foto_berkas_id),
     fotoBerkasId: r.foto_berkas_id,
     bukti: r.bukti,

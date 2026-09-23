@@ -34,7 +34,7 @@ export function Toast() {
         <>
           <Ikon nama="selesai" ukuran={18} />
           <span>{toast.pesan}</span>
-          {toast.adaUndo && s.undo ? (
+          {toast.adaUndo && s.undo && !s.langsung ? (
             <button type="button" onClick={() => kirim({ t: "undo" })}>
               Batalkan
             </button>

@@ -482,7 +482,9 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
     }
 
     case "undo":
-      if (!s.undo) return s;
+      // Saat meja terhubung database, membatalkan di layar saja menyesatkan:
+      // tulisannya sudah mendarat di server. Tombolnya pun disembunyikan.
+      if (!s.undo || s.langsung) return s;
       return { ...s, data: s.undo, undo: null, toast: null };
 
     case "tutup-toast":
