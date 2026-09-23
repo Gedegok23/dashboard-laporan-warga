@@ -116,6 +116,14 @@ export async function tugaskanAksi(tiket: string, petugasKode: string | null, se
           [petugasKode],
         )).rows[0]
       : null;
+    // Menugaskan regu yang sudah memegang laporan ini bukan perubahan. Tanpa
+    // pemeriksaan di sini, satu klik ulang menambah baris jejak audit kosong.
+    // Server tidak boleh bergantung pada klien untuk menyaringnya.
+    const sudah = (await c.query<{ petugas_id: number | null }>(
+      "SELECT petugas_id FROM penanganan WHERE laporan_id = $1",
+      [ids[0]],
+    )).rows[0];
+    if ((sudah?.petugas_id ?? null) === (p?.id ?? null)) return;
     for (const id of ids) {
       await c.query(
         `INSERT INTO penanganan (laporan_id, petugas_id) VALUES ($1,$2)
@@ -136,7 +144,14 @@ export async function tugaskanAksi(tiket: string, petugasKode: string | null, se
 export async function jadwalAksi(tiket: string, nilai: string, seKlaster: boolean) {
   const j = nilai.trim() || null;
   await transaksi(async (c) => {
-    for (const id of await sasaran(c, tiket, seKlaster)) {
+    const ids = await sasaran(c, tiket, seKlaster);
+    if (!ids.length) return;
+    const sudah = (await c.query<{ jadwal: string | null }>(
+      "SELECT jadwal FROM penanganan WHERE laporan_id = $1",
+      [ids[0]],
+    )).rows[0];
+    if ((sudah?.jadwal ?? null) === j) return;
+    for (const id of ids) {
       await c.query(
         `INSERT INTO penanganan (laporan_id, jadwal) VALUES ($1,$2)
          ON CONFLICT (laporan_id) DO UPDATE SET jadwal = $2, updated_at = now()`,
