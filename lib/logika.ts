@@ -508,7 +508,10 @@ function untukPortal(k: Klaster, l: Laporan): LaporanPortal {
     serupa: saudaraKlaster(k, l).length,
     titik: kasarkan(l.koordinat),
     fotoPelapor: l.foto.nama !== "tidak ada lampiran",
+    // Data contoh tidak punya berkas nyata di penyimpanan objek.
+    fotoBerkasId: null,
     bukti: penangananLaporan(l).bukti.length,
+    buktiBerkas: [],
     kabar: kb ? { teks: kb.teks, waktu: kb.waktu } : null,
     umpan: u ? { teks: u.teks, oleh: u.oleh, waktu: u.waktu } : null,
     perjalanan: perjalanan(k, l),

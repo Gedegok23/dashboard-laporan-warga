@@ -59,6 +59,25 @@ export default async function RincianLaporan(props: PageProps<"/portal/laporan/[
               </span>
             </p>
 
+            {l.fotoBerkasId || l.buktiBerkas.length ? (
+              <div className="galeri">
+                {l.fotoBerkasId ? (
+                  <figure>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/berkas/${l.fotoBerkasId}`} alt="Foto yang dikirim pelapor" loading="lazy" />
+                    <figcaption>Dari pelapor</figcaption>
+                  </figure>
+                ) : null}
+                {l.buktiBerkas.map((id, i) => (
+                  <figure key={id}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/berkas/${id}`} alt={`Bukti penanganan ${i + 1}`} loading="lazy" />
+                    <figcaption>Bukti petugas {i + 1}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            ) : null}
+
             <div className="pjalan-bungkus">
               <p className="plabel">Perjalanan laporan</p>
               <ol className="pjalan">

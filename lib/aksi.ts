@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { kolam, tahapDari } from "./db";
+import { BUCKET, adaSimpanan, unggahGambar } from "./simpanan";
 import type { StatusTindak } from "./tipe";
 
 /**
@@ -160,25 +161,63 @@ export async function catatanAksi(tiket: string, teks: string) {
   // Mengetik catatan tidak menyegarkan halaman: isinya sudah ada di layar.
 }
 
-export async function buktiTambahAksi(tiket: string) {
-  await transaksi(async (c) => {
+/**
+ * Catat bukti lapangan. Berkasnya benar-benar diunggah ke penyimpanan objek;
+ * yang masuk database hanya kunci dan metadatanya.
+ */
+export async function buktiTambahAksi(tiket: string, berkas?: FormData) {
+  await pastikanPetugas();
+  const p = kolam();
+  if (!p) return;
+
+  const isi = berkas?.get("berkas");
+  const adaBerkas = isi instanceof File && isi.size > 0;
+  if (!adaBerkas && adaSimpanan()) {
+    throw new Error("pilih berkas foto dari lapangan lebih dulu");
+  }
+
+  const c = await p.connect();
+  try {
+    await c.query("BEGIN");
     const l = await idDari(c, tiket);
     if (!l) return;
-    const p = (await c.query<{ nama: string }>(
-      "SELECT pt.nama FROM penanganan p JOIN petugas_lapangan pt ON pt.id = p.petugas_id WHERE p.laporan_id = $1",
+    const pet = (await c.query<{ nama: string }>(
+      "SELECT pt.nama FROM penanganan pn JOIN petugas_lapangan pt ON pt.id = pn.petugas_id WHERE pn.laporan_id = $1",
       [l.id],
     )).rows[0];
-    if (!p) throw new Error("bukti hanya bisa dicatat atas nama petugas yang ditugaskan");
-    const n = (await c.query<{ n: string }>("SELECT count(*) n FROM bukti WHERE laporan_id = $1", [l.id])).rows[0].n;
-    const urut = String(Number(n) + 1).padStart(2, "0");
-    const d = new Date();
-    const cap = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
+    if (!pet) throw new Error("bukti hanya bisa dicatat atas nama petugas yang ditugaskan");
+
+    let berkasId: number | null = null;
+    let nama: string;
+    if (adaBerkas) {
+      const hasil = await unggahGambar(
+        BUCKET.bukti,
+        l.id,
+        new Uint8Array(await (isi as File).arrayBuffer()),
+        (isi as File).name,
+      );
+      if (!hasil.ok) throw new Error(hasil.alasan);
+      berkasId = hasil.berkasId;
+      nama = (isi as File).name;
+    } else {
+      // Tanpa penyimpanan objek, bukti hanya tercatat sebagai keterangan.
+      const d = new Date();
+      const cap = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
+      nama = `IMG-${cap}-lapangan.jpg`;
+    }
+
     await c.query(
-      "INSERT INTO bukti (laporan_id, nama, ukuran, oleh) VALUES ($1,$2,$3,$4)",
-      [l.id, `IMG-${cap}-lapangan-${urut}.jpg`, "2,0 MB", p.nama],
+      "INSERT INTO bukti (laporan_id, nama, ukuran, oleh, berkas_id) VALUES ($1,$2,$3,$4,$5)",
+      [l.id, nama, adaBerkas ? `${Math.round((isi as File).size / 1024)} KB` : "-", pet.nama, berkasId],
     );
-    await catat(c, l.id, "Bukti dokumentasi", `Bukti lapangan diunggah ${p.nama}`);
-  });
+    await catat(c, l.id, "Bukti dokumentasi", `Bukti lapangan diunggah ${pet.nama}`);
+    await c.query("COMMIT");
+  } catch (e) {
+    await c.query("ROLLBACK").catch(() => {});
+    throw e;
+  } finally {
+    c.release();
+  }
   segarkan();
 }
 

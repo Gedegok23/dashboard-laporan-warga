@@ -1880,6 +1880,14 @@ mark {
   border-radius: var(--r-ctl);
   color: var(--ink-3);
 }
+.buktilist .kotak.foto {
+  object-fit: cover;
+  border-style: solid;
+  border-color: var(--line);
+}
+.bantu.galat {
+  color: var(--kritis);
+}
 .buktilist .isi {
   min-width: 0;
   font-size: 11.5px;
@@ -2373,6 +2381,29 @@ mark {
   color: var(--ink-3);
   flex: none;
 }
+.galeri {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.galeri figure {
+  margin: 0;
+}
+.galeri img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.galeri figcaption {
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.rincian-isi > .galeri,
 .rincian-isi > .pjalan-bungkus,
 .rincian-isi > .ppesan,
 .rincian-isi > .pkaki-baris {

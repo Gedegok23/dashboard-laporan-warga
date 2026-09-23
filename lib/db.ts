@@ -50,7 +50,9 @@ type BarisDb = {
   klaster_kode: string | null;
   klaster_wilayah: string | null;
   foto_pelapor: string | null;
+  foto_berkas_id: number | null;
   bukti: number;
+  bukti_berkas: number[] | null;
   petugas_nama: string | null;
   petugas_regu: string | null;
   jadwal: string | null;
@@ -64,7 +66,7 @@ type BarisDb = {
 
 const SQL = `
   SELECT l.id, l.kode_lacak, l.judul, l.deskripsi, l.status, l.jenis, l.lokasi,
-         l.kelurahan, l.kecamatan, l.duplikat, l.created_at, l.foto_pelapor,
+         l.kelurahan, l.kecamatan, l.duplikat, l.created_at, l.foto_pelapor, l.foto_berkas_id,
          i.nama              AS instansi,
          k.kategori          AS kategori,
          k.kode              AS klaster_kode,
@@ -73,6 +75,8 @@ const SQL = `
          pt.nama             AS petugas_nama,
          pt.regu             AS petugas_regu,
          (SELECT count(*) FROM bukti b WHERE b.laporan_id = l.id)::int AS bukti,
+         (SELECT array_agg(b.berkas_id ORDER BY b.diunggah_at)
+            FROM bukti b WHERE b.laporan_id = l.id AND b.berkas_id IS NOT NULL) AS bukti_berkas,
          u.teks AS umpan_teks, u.oleh AS umpan_oleh, u.created_at AS umpan_waktu,
          kb.teks AS kabar_teks, kb.created_at AS kabar_waktu,
          (SELECT json_agg(json_build_object(
@@ -162,8 +166,10 @@ function keLaporanPortal(r: BarisDb, serupa: number): LaporanPortal {
     duplikat: Boolean(r.duplikat),
     serupa,
     titik: [0, 0],
-    fotoPelapor: Boolean(r.foto_pelapor),
+    fotoPelapor: Boolean(r.foto_pelapor || r.foto_berkas_id),
+    fotoBerkasId: r.foto_berkas_id,
     bukti: r.bukti,
+    buktiBerkas: r.bukti_berkas ?? [],
     kabar: r.kabar_teks ? { teks: r.kabar_teks, waktu: pendek(r.kabar_waktu!) } : null,
     umpan: r.umpan_teks
       ? { teks: r.umpan_teks, oleh: r.umpan_oleh ?? "Instansi", waktu: pendek(r.umpan_waktu!) }
@@ -234,7 +240,7 @@ type BarisMeja = BarisDb & {
   petugas_kode: string | null;
   catatan: string | null;
   telegram_user: string | null;
-  bukti_rinci: { nama: string; ukuran: string | null; gps: string | null; oleh: string | null; diunggah_at: string }[] | null;
+  bukti_rinci: { nama: string; ukuran: string | null; gps: string | null; oleh: string | null; diunggah_at: string; berkas_id: number | null }[] | null;
   umpan_semua: { teks: string; oleh: string; penerima: number; created_at: string }[] | null;
   kabar_semua: { teks: string; status: string; penerima: number; created_at: string }[] | null;
 };
@@ -242,7 +248,7 @@ type BarisMeja = BarisDb & {
 const SQL_MEJA = `
   SELECT l.id AS laporan_id, l.kode_lacak, l.judul, l.deskripsi, l.status, l.jenis,
          l.lokasi, l.kelurahan, l.kecamatan, l.duplikat, l.created_at, l.foto_pelapor,
-         l.latitude, l.longitude, l.skor, l.urgensi, l.instansi_id, l.klaster_id,
+         l.latitude, l.longitude, l.skor, l.urgensi, l.instansi_id, l.klaster_id, l.foto_berkas_id,
          l.telegram_user,
          i.nama AS instansi, i.sla_hari,
          k.kategori AS klaster_kategori, k.kode AS klaster_kode, k.jenis AS klaster_jenis,
@@ -251,7 +257,8 @@ const SQL_MEJA = `
          pt.nama AS petugas_nama, pt.regu AS petugas_regu, pt.kode AS petugas_kode,
          (SELECT count(*) FROM bukti b WHERE b.laporan_id = l.id)::int AS bukti,
          (SELECT json_agg(json_build_object('nama',b.nama,'ukuran',b.ukuran,'gps',b.gps,
-                   'oleh',b.oleh,'diunggah_at',b.diunggah_at) ORDER BY b.diunggah_at)
+                   'oleh',b.oleh,'diunggah_at',b.diunggah_at,'berkas_id',b.berkas_id)
+                 ORDER BY b.diunggah_at)
             FROM bukti b WHERE b.laporan_id = l.id) AS bukti_rinci,
          (SELECT json_agg(json_build_object('teks',u.teks,'oleh',u.oleh,'penerima',u.penerima,
                    'created_at',u.created_at) ORDER BY u.created_at DESC)
@@ -294,6 +301,7 @@ function keLaporanMeja(r: BarisMeja): Laporan {
     jam: jam(new Date(b.diunggah_at)),
     oleh: b.oleh ?? "Petugas lapangan",
     gps: b.gps ?? "-",
+    berkasId: b.berkas_id,
   }));
   const riwayat: Riwayat[] = (r.riwayat ?? []).map((s) => [
     s.status_baru,

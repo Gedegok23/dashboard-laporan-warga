@@ -52,6 +52,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Semua kecuali portal warga, berkas statis, dan favicon.
-  matcher: ["/((?!portal|_next/static|_next/image|favicon.ico).*)"],
+  // Semua kecuali portal warga, penyaji gambar, berkas statis, dan favicon.
+  // `/berkas` memeriksa haknya sendiri: foto laporan publik memang boleh
+  // dilihat siapa saja, sedangkan aslinya hanya untuk petugas.
+  matcher: ["/((?!portal|berkas|_next/static|_next/image|favicon.ico).*)"],
 };

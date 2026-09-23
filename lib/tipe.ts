@@ -97,6 +97,8 @@ export type Bukti = {
   /** Nama petugas lapangan yang mengunggah. */
   oleh: string;
   gps: string;
+  /** Id berkas di penyimpanan objek. Null bila hanya tercatat sebagai keterangan. */
+  berkasId?: number | null;
 };
 
 export type Penanganan = {
@@ -179,7 +181,11 @@ export type LaporanPortal = {
    */
   titik: [number, number];
   fotoPelapor: boolean;
+  /** Id berkas foto pelapor, untuk disajikan lewat /berkas/<id>. */
+  fotoBerkasId: number | null;
   bukti: number;
+  /** Id berkas bukti lapangan, urut sesuai waktu unggah. */
+  buktiBerkas: number[];
   kabar: { teks: string; waktu: string } | null;
   umpan: { teks: string; oleh: string; waktu: string } | null;
   perjalanan: Tonggak[];

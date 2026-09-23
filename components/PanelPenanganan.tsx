@@ -1,8 +1,11 @@
 "use client";
 
+import { useRef, useState, useTransition } from "react";
+
 import { Ikon } from "./Ikon";
 import { TindakChip } from "./MejaPenanganan";
 import { useMeja } from "./MejaProvider";
+import { buktiTambahAksi } from "@/lib/aksi";
 import { BUKTI_MINIMAL, TINDAK } from "@/lib/data";
 import {
   cariPetugas,
@@ -23,6 +26,9 @@ const LANGKAH: StatusTindak[] = ["belum", "proses", "selesai"];
 
 export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
   const { s, kirim, jamKini } = useMeja();
+  const kotakBerkas = useRef<HTMLInputElement>(null);
+  const [mengunggah, mulaiUnggah] = useTransition();
+  const [galatUnggah, setGalatUnggah] = useState<string | null>(null);
 
   const p = penangananLaporan(l);
   const status = statusTindak(l);
@@ -211,9 +217,14 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
           <ul className="buktilist">
             {p.bukti.map((b) => (
               <li key={b.nama}>
-                <span className="kotak" aria-hidden>
-                  <Ikon nama="kamera" ukuran={18} />
-                </span>
+                {b.berkasId ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="kotak foto" src={`/berkas/${b.berkasId}`} alt={`Bukti lapangan ${b.nama}`} />
+                ) : (
+                  <span className="kotak" aria-hidden>
+                    <Ikon nama="kamera" ukuran={18} />
+                  </span>
+                )}
                 <span className="isi">
                   <b className="mono">{b.nama}</b>
                   <span>
@@ -232,15 +243,42 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
             ))}
           </ul>
         )}
+        <input
+          ref={kotakBerkas}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="sr"
+          id="berkasBukti"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            e.target.value = "";
+            if (!f) return;
+            setGalatUnggah(null);
+            if (!s.langsung) {
+              kirim({ t: "bukti-tambah", jam: jamKini() });
+              return;
+            }
+            const muatan = new FormData();
+            muatan.set("berkas", f);
+            mulaiUnggah(async () => {
+              try {
+                await buktiTambahAksi(l.tiket, muatan);
+              } catch (err) {
+                setGalatUnggah(err instanceof Error ? err.message : "Unggahan ditolak server.");
+              }
+            });
+          }}
+        />
         <button
           className="btn"
           type="button"
-          disabled={!petugasKini}
-          onClick={() => kirim({ t: "bukti-tambah", jam: jamKini() })}
+          disabled={!petugasKini || mengunggah}
+          onClick={() => kotakBerkas.current?.click()}
         >
           <Ikon nama="unggah" ukuran={17} />
-          Catat bukti dari lapangan
+          {mengunggah ? "Mengunggah..." : "Unggah bukti dari lapangan"}
         </button>
+        {galatUnggah ? <p className="bantu galat">{galatUnggah}</p> : null}
       </div>
 
       {blokKabar}
