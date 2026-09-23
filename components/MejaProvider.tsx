@@ -141,8 +141,9 @@ export function MejaProvider({
     const tertunda = antre.current;
     antre.current = [];
     for (const { a, sebelum } of tertunda) {
-      // Reducer mengembalikan objek data yang sama persis bila aksinya ditolak.
-      if (sebelum.data === s.data && a.t !== "catatan" && a.t !== "draf") continue;
+      // Penanda revisi hanya naik bila reducer menerima aksinya. Membandingkan
+      // isi data tidak cukup: pemuatan ulang dari server ikut menggantinya.
+      if (sebelum.revisi === s.revisi && a.t !== "catatan" && a.t !== "draf") continue;
       if (a.t === "catatan") {
         // Mengetik catatan: satu tulisan setelah jeda, bukan satu transaksi
         // database per ketukan tombol.

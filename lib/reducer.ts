@@ -46,6 +46,12 @@ export type Keadaan = {
   seKlaster: boolean;
   /** Isi meja datang dari database, bukan data contoh. */
   langsung: boolean;
+  /**
+   * Bertambah hanya ketika satu aksi benar-benar mengubah isi. Dipakai untuk
+   * membedakan aksi yang diterima dari yang ditolak diam-diam oleh reducer,
+   * tanpa terganggu pemuatan ulang data dari server.
+   */
+  revisi: number;
   /** Salinan data sebelum aksi terakhir, sumber tombol Batalkan. */
   undo: Klaster[] | null;
   toast: { id: number; pesan: string; adaUndo: boolean } | null;
@@ -68,6 +74,7 @@ export const keadaanAwal: Keadaan = {
   arahTindak: "naik",
   seKlaster: false,
   langsung: false,
+  revisi: 0,
   undo: null,
   toast: null,
   nomorToast: 0,
@@ -142,10 +149,13 @@ const bukaYangCocok = (data: Klaster[], saring: Saring, kunci: string, buka: num
   return [...new Set([...buka, ...tambahan])];
 };
 
+// Setiap aksi yang benar-benar mengubah isi berakhir di sini, jadi di sinilah
+// penanda revisi dinaikkan.
 const denganToast = (s: Keadaan, pesan: string, adaUndo = true): Keadaan => ({
   ...s,
   toast: { id: s.nomorToast + 1, pesan, adaUndo },
   nomorToast: s.nomorToast + 1,
+  revisi: s.revisi + 1,
 });
 
 /**
