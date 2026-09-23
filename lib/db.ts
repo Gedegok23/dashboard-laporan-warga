@@ -7,7 +7,7 @@ import type { Jenis, KelompokPortal, LaporanPortal, StatusPortal, Tonggak } from
  */
 const g = globalThis as unknown as { _mejaPool?: Pool };
 
-function pool(): Pool | null {
+export function kolam(): Pool | null {
   if (!process.env.MEJA_DATABASE_URL) return null;
   g._mejaPool ??= new Pool({ connectionString: process.env.MEJA_DATABASE_URL, max: 4 });
   return g._mejaPool;
@@ -178,7 +178,7 @@ function keLaporanPortal(r: BarisDb, serupa: number): LaporanPortal {
  * pengelompokan kemiripan dikerjakan agent.
  */
 export async function dataPortalDb(): Promise<KelompokPortal[] | null> {
-  const p = pool();
+  const p = kolam();
   if (!p) return null;
   const { rows } = await p.query<BarisDb>(SQL);
 
@@ -213,3 +213,213 @@ const LABEL_JENIS: Record<Jenis, string> = {
   sosial: "Sosial",
   lainnya: "Laporan lain",
 };
+
+/* ---------- pembacaan untuk dashboard instansi ---------- */
+
+import type { BarisLog, Bukti, Klaster, Laporan, Riwayat, Tahap } from "./tipe";
+
+type BarisMeja = BarisDb & {
+  laporan_id: number;
+  deskripsi: string;
+  latitude: string | null;
+  longitude: string | null;
+  skor: string | null;
+  urgensi: string | null;
+  sla_hari: number | null;
+  instansi_id: number | null;
+  klaster_id: number | null;
+  klaster_kategori: string | null;
+  klaster_jenis: string | null;
+  klaster_ambang: string | null;
+  petugas_kode: string | null;
+  catatan: string | null;
+  telegram_user: string | null;
+  bukti_rinci: { nama: string; ukuran: string | null; gps: string | null; oleh: string | null; diunggah_at: string }[] | null;
+  umpan_semua: { teks: string; oleh: string; penerima: number; created_at: string }[] | null;
+  kabar_semua: { teks: string; status: string; penerima: number; created_at: string }[] | null;
+};
+
+const SQL_MEJA = `
+  SELECT l.id AS laporan_id, l.kode_lacak, l.judul, l.deskripsi, l.status, l.jenis,
+         l.lokasi, l.kelurahan, l.kecamatan, l.duplikat, l.created_at, l.foto_pelapor,
+         l.latitude, l.longitude, l.skor, l.urgensi, l.instansi_id, l.klaster_id,
+         l.telegram_user,
+         i.nama AS instansi, i.sla_hari,
+         k.kategori AS klaster_kategori, k.kode AS klaster_kode, k.jenis AS klaster_jenis,
+         k.wilayah AS klaster_wilayah, k.ambang AS klaster_ambang,
+         p.jadwal, p.catatan,
+         pt.nama AS petugas_nama, pt.regu AS petugas_regu, pt.kode AS petugas_kode,
+         (SELECT count(*) FROM bukti b WHERE b.laporan_id = l.id)::int AS bukti,
+         (SELECT json_agg(json_build_object('nama',b.nama,'ukuran',b.ukuran,'gps',b.gps,
+                   'oleh',b.oleh,'diunggah_at',b.diunggah_at) ORDER BY b.diunggah_at)
+            FROM bukti b WHERE b.laporan_id = l.id) AS bukti_rinci,
+         (SELECT json_agg(json_build_object('teks',u.teks,'oleh',u.oleh,'penerima',u.penerima,
+                   'created_at',u.created_at) ORDER BY u.created_at DESC)
+            FROM umpan u WHERE u.laporan_id = l.id) AS umpan_semua,
+         (SELECT json_agg(json_build_object('teks',kb.teks,'status',kb.status,'penerima',kb.penerima,
+                   'created_at',kb.created_at) ORDER BY kb.created_at DESC)
+            FROM kabar kb WHERE kb.laporan_id = l.id) AS kabar_semua,
+         (SELECT json_agg(json_build_object('status_baru',s.status_baru,'catatan',s.catatan,
+                   'created_at',s.created_at) ORDER BY s.created_at DESC)
+            FROM status_log s WHERE s.laporan_id = l.id) AS riwayat,
+         NULL::text AS umpan_teks, NULL::text AS umpan_oleh, NULL::timestamp AS umpan_waktu,
+         NULL::text AS kabar_teks, NULL::timestamp AS kabar_waktu
+    FROM laporan l
+    LEFT JOIN instansi i ON i.id = l.instansi_id
+    LEFT JOIN klaster  k ON k.id = l.klaster_id
+    LEFT JOIN penanganan p ON p.laporan_id = l.id
+    LEFT JOIN petugas_lapangan pt ON pt.id = p.petugas_id
+   WHERE l.is_public
+   ORDER BY l.created_at DESC
+`;
+
+const dua = (n: number) => String(n).padStart(2, "0");
+/** YYMMDDHHMM, format urut yang dipakai seluruh aplikasi. */
+const keTs = (d: Date) =>
+  Number(`${dua(d.getFullYear() % 100)}${dua(d.getMonth() + 1)}${dua(d.getDate())}${dua(d.getHours())}${dua(d.getMinutes())}`);
+
+/** Sisa hari kerja sebelum batas tindak lanjut instansi. Null bila sudah selesai. */
+function sisaHari(dibuat: Date, sla: number | null, tahap: number) {
+  if (tahap === 3) return null;
+  const lewat = Math.floor((Date.now() - dibuat.getTime()) / 86_400_000);
+  return (sla ?? 5) - lewat;
+}
+
+function keLaporanMeja(r: BarisMeja): Laporan {
+  const tahap = tahapDari(r.status) as Tahap;
+  const d = r.created_at;
+  const bukti: Bukti[] = (r.bukti_rinci ?? []).map((b) => ({
+    nama: b.nama,
+    ukuran: b.ukuran ?? "-",
+    jam: jam(new Date(b.diunggah_at)),
+    oleh: b.oleh ?? "Petugas lapangan",
+    gps: b.gps ?? "-",
+  }));
+  const riwayat: Riwayat[] = (r.riwayat ?? []).map((s) => [
+    s.status_baru,
+    s.catatan ?? "",
+    pendek(new Date(s.created_at)),
+  ]);
+  // Agent dilarang menanyakan nama dan nomor. Yang ada cuma pegangan Telegram.
+  const pegangan = r.telegram_user ? `@${r.telegram_user}` : "Lewat bot Telegram";
+  const tambahan: BarisLog[] = (r.kabar_semua ?? [])
+    .slice()
+    .reverse()
+    .map((k) => ({
+      siapa: "Bot",
+      peran: "bot" as const,
+      ikon: "kirim" as const,
+      jam: jam(new Date(k.created_at)),
+      teks: `Kabar status dikirim ke pelapor: ${k.teks}`,
+    }));
+
+  return {
+    tiket: r.kode_lacak,
+    tahap,
+    sisa: sisaHari(d, r.sla_hari, tahap),
+    ts: keTs(d),
+    tgl: tgl(d),
+    jam: jam(d),
+    kanal: "bot Telegram",
+    ringkas: r.judul,
+    mentah: r.deskripsi,
+    jalan: r.lokasi ?? r.deskripsi.split("Lokasi:").pop()?.trim() ?? "Lokasi menyusul",
+    kelurahan: r.kelurahan ?? "-",
+    kecamatan: r.kecamatan ?? "-",
+    koordinat: r.latitude && r.longitude ? `${r.latitude}, ${r.longitude}` : "belum dicatat",
+    skor: r.skor ? Number(r.skor) : 0,
+    foto: {
+      nama: r.foto_pelapor ?? "tidak ada lampiran",
+      ukuran: r.foto_pelapor ? "-" : "-",
+      gps: "-",
+      selisih: null,
+    },
+    pelapor: { nama: pegangan, namaPenuh: pegangan, wa: "tidak diminta", waPenuh: "tidak diminta agent" },
+    riwayat,
+    duplikat: Boolean(r.duplikat),
+    // Instansi laporan diambil dari kolomnya sendiri, bukan diwarisi klaster,
+    // supaya pengalihan instansi tidak hilang saat halaman dimuat ulang.
+    instansi: r.instansi,
+    tambahan,
+    penanganan: {
+      petugas: r.petugas_kode,
+      jadwal: r.jadwal,
+      catatan: r.catatan ?? "",
+      bukti,
+    },
+    umpan: (r.umpan_semua ?? []).map((u) => ({
+      teks: u.teks,
+      oleh: u.oleh,
+      waktu: pendek(new Date(u.created_at)),
+      penerima: u.penerima,
+    })),
+    kabar: (r.kabar_semua ?? []).map((k) => ({
+      status: (k.status === "Selesai" ? "selesai" : k.status === "Ditindaklanjuti" ? "proses" : "belum") as
+        | "belum"
+        | "proses"
+        | "selesai",
+      teks: k.teks,
+      waktu: pendek(new Date(k.created_at)),
+      penerima: k.penerima,
+    })),
+    draf: "",
+  };
+}
+
+const LABEL_KLASTER: Record<string, string> = {
+  infrastruktur: "Infrastruktur dan jalan",
+  lingkungan: "Lingkungan dan kebersihan",
+  keamanan: "Keamanan dan ketertiban",
+  kesehatan: "Kesehatan",
+  sosial: "Sosial",
+  lainnya: "Laporan lain",
+};
+
+/**
+ * Isi meja petugas dari database. Laporan yang belum dikelompokkan agent
+ * disatukan menurut jenis masalah, supaya meja tetap punya struktur klaster.
+ */
+export async function dataMejaDb(): Promise<Klaster[] | null> {
+  const p = kolam();
+  if (!p) return null;
+  const { rows } = await p.query<BarisMeja>(SQL_MEJA);
+
+  const grup = new Map<string, Klaster>();
+  for (const r of rows) {
+    const j = jenisDari(r.klaster_jenis ?? r.jenis);
+    const kunci = r.klaster_kode ?? `jenis:${j}`;
+    if (!grup.has(kunci)) {
+      grup.set(kunci, {
+        id: r.klaster_kode ?? `KLS-${j.slice(0, 4).toUpperCase()}`,
+        kategori: r.klaster_kategori ?? LABEL_KLASTER[j],
+        jenis: j,
+        wilayah: r.klaster_wilayah ?? r.kecamatan ?? "Kota Palembang",
+        instansi: r.instansi ?? "Belum ditetapkan",
+        ambang: r.klaster_ambang ? Number(r.klaster_ambang) : 0.85,
+        sintetis: r.klaster_kode === null,
+        lapor: [],
+      });
+    }
+    grup.get(kunci)!.lapor.push(keLaporanMeja(r));
+  }
+  return [...grup.values()];
+}
+
+/** Laporan masuk per hari, 14 hari terakhir, untuk halaman tren. */
+export async function harianDb(): Promise<[string, number][] | null> {
+  const p = kolam();
+  if (!p) return null;
+  const { rows } = await p.query<{ hari: Date; n: string }>(
+    `WITH hari AS (
+       SELECT generate_series(current_date - interval '13 day', current_date, interval '1 day')::date AS d
+     )
+     SELECT h.d AS hari, count(l.id) AS n
+       FROM hari h LEFT JOIN laporan l ON l.created_at::date = h.d
+      GROUP BY h.d ORDER BY h.d`,
+  );
+  const NAMA = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  return rows.map((r) => {
+    const d = new Date(r.hari);
+    return [`${NAMA[d.getDay()]} ${d.getDate()} ${BULAN[d.getMonth()]}`, Number(r.n)] as [string, number];
+  });
+}

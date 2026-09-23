@@ -44,6 +44,8 @@ export type Keadaan = {
   arahTindak: Arah;
   /** Aksi penanganan ikut mengenai laporan mirip di klaster yang sama. */
   seKlaster: boolean;
+  /** Isi meja datang dari database, bukan data contoh. */
+  langsung: boolean;
   /** Salinan data sebelum aksi terakhir, sumber tombol Batalkan. */
   undo: Klaster[] | null;
   toast: { id: number; pesan: string; adaUndo: boolean } | null;
@@ -65,6 +67,7 @@ export const keadaanAwal: Keadaan = {
   urutTindak: "status",
   arahTindak: "naik",
   seKlaster: false,
+  langsung: false,
   undo: null,
   toast: null,
   nomorToast: 0,
@@ -95,6 +98,7 @@ export type Aksi =
   | { t: "bukti-hapus"; nama: string; jam: string }
   | { t: "draf"; teks: string }
   | { t: "kirim-umpan"; jam: string }
+  | { t: "muat"; data: Klaster[] }
   | { t: "undo" }
   | { t: "tutup-toast" };
 
@@ -467,6 +471,14 @@ export function reducer(s: Keadaan, a: Aksi): Keadaan {
         { ...s, data, undo: s.data },
         `Umpan balik terbit di portal dan dikirim agent ke ${kena.length} pelapor.`,
       );
+    }
+
+    case "muat": {
+      // Server memegang kebenaran. Pilihan petugas (laporan mana yang terbuka,
+      // saringan, tab) dipertahankan; isinya yang diganti.
+      const kls = Math.min(s.kls, Math.max(0, a.data.length - 1));
+      const lap = Math.min(s.lap, Math.max(0, (a.data[kls]?.lapor.length ?? 1) - 1));
+      return { ...s, data: a.data, kls, lap, undo: null };
     }
 
     case "undo":

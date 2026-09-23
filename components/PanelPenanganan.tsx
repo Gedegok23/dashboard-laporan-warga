@@ -30,6 +30,9 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
   const { cocok, lain } = petugasUntuk(instansiLaporan(l, k));
   const mirip = saudaraKlaster(k, l).length;
   const miripKerja = saudaraKerja(k, l).length;
+  // Klaster sintetis cuma pengelompokan tampilan: di database laporannya tidak
+  // terhubung, jadi aksi seklaster tidak akan mengenai siapa pun.
+  const bisaSeKlaster = mirip > 0 && !k.sintetis;
   const siapDitutup = cukupBukti(l);
   const draf = (l.draf ?? "").trim();
   const penerima = penerimaUmpan(k, l, s.seKlaster);
@@ -83,13 +86,15 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
           type="checkbox"
           id="seKlaster"
           checked={s.seKlaster}
-          disabled={mirip === 0}
+          disabled={!bisaSeKlaster}
           onChange={() => kirim({ t: "se-klaster" })}
         />
         <label htmlFor="seKlaster">
           <b>Terapkan ke laporan mirip</b>
           <span>
-            {mirip === 0
+            {k.sintetis
+              ? "Laporan di sini dikelompokkan menurut jenis masalah, belum menurut kemiripan isi. Aksi seklaster baru berlaku setelah agent mengelompokkan laporan."
+              : mirip === 0
               ? `Tidak ada laporan mirip lain di klaster ${k.id}.`
               : `Penugasan, jadwal, dan penanda tindakan ikut mengenai ${miripKerja} laporan mirip yang sudah diverifikasi. Umpan balik dan kabar agent sampai ke ${penerima} pelapor di klaster ${k.id}.`}
           </span>

@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import { Ikon } from "@/components/Ikon";
-import { BATAS_HARI_KERJA, dataAwal } from "@/lib/data";
+import { BATAS_HARI_KERJA } from "@/lib/data";
 import { scorecardInstansi } from "@/lib/logika";
+import { isiMeja } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Scorecard",
   description: "Perbandingan penanganan laporan warga antar instansi Kota Bandung.",
 };
 
-export default function Scorecard() {
-  const baris = scorecardInstansi(dataAwal);
+export const revalidate = 0;
+
+export default async function Scorecard() {
+  const { data } = await isiMeja();
+  const baris = scorecardInstansi(data);
   const maks = Math.max(1, ...baris.map((b) => b.total));
 
   return (

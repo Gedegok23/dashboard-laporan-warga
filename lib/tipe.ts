@@ -250,6 +250,12 @@ export type Klaster = {
   instansi: string;
   /** Ambang kemiripan untuk masuk klaster ini. */
   ambang: number;
+  /**
+   * true bila klaster ini dibentuk aplikasi dari jenis masalah, bukan hasil
+   * pengelompokan kemiripan. Aksi seklaster tidak berlaku untuk klaster
+   * semacam ini karena di database laporannya tidak benar-benar terhubung.
+   */
+  sintetis?: boolean;
   lapor: Laporan[];
 };
 

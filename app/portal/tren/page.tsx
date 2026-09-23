@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Ikon } from "@/components/Ikon";
 import { GrafikMasuk } from "@/components/portal/GrafikMasuk";
-import { dataAwal, harian } from "@/lib/data";
 import { JENIS } from "@/lib/kategori";
-import { hitungPortal, sebaranJenis } from "@/lib/logika";
+import { sebaranJenis } from "@/lib/logika";
+import { isiHarian, isiMeja, isiPortal } from "@/lib/sumber";
 import type { Jenis } from "@/lib/tipe";
 
 export const metadata: Metadata = {
@@ -11,9 +11,13 @@ export const metadata: Metadata = {
   description: "Laporan warga Kota Bandung yang masuk per hari dan sebarannya menurut jenis masalah.",
 };
 
-export default function Tren() {
-  const h = hitungPortal(dataAwal);
-  const sebaran = sebaranJenis(dataAwal);
+export const revalidate = 0;
+
+export default async function Tren() {
+  const [{ data }, { harian }, { kelompok }] = await Promise.all([isiMeja(), isiHarian(), isiPortal()]);
+  const semua = kelompok.flatMap((g) => g.lapor);
+  const h = { total: semua.length, clear: semua.filter((l) => l.status === "clear").length };
+  const sebaran = sebaranJenis(data);
   const maks = Math.max(1, ...sebaran.map((s) => s.total));
   const puncak = harian.reduce((a, b) => (b[1] > a[1] ? b : a));
   const totalMasuk = harian.reduce((n, d) => n + d[1], 0);

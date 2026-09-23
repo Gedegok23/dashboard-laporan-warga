@@ -8,10 +8,15 @@ import { Ringkas } from "@/components/Ringkas";
 import { Saringan } from "@/components/Saringan";
 import { Toast } from "@/components/Toast";
 import { TopBar } from "@/components/TopBar";
+import { isiMeja } from "@/lib/sumber";
 
-export default function Halaman() {
+export const revalidate = 0;
+
+export default async function Halaman() {
+  const { data, langsung } = await isiMeja();
+
   return (
-    <MejaProvider>
+    <MejaProvider data={data} langsung={langsung}>
       <a className="skip" href="#penanganan">
         Lewati ke penanganan laporan
       </a>

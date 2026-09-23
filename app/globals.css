@@ -1407,6 +1407,10 @@ mark {
   transform: translateY(0);
   pointer-events: auto;
 }
+.toast.gagal {
+  background: var(--kritis);
+  color: #fff;
+}
 .toast button {
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.34);
