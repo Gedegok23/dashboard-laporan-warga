@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { CekStatus } from "@/components/portal/CekStatus";
-import { dataAwal } from "@/lib/data";
-import { dataPortal } from "@/lib/logika";
+import { semuaLaporanPortal } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Cek Status",
   description: "Lacak satu laporan warga Kota Bandung dengan nomor tiketnya.",
 };
 
-export default function HalamanCekStatus() {
-  const daftar = dataPortal(dataAwal).flatMap((g) => g.lapor);
+export const revalidate = 0;
+
+export default async function HalamanCekStatus() {
+  const daftar = await semuaLaporanPortal();
 
   return (
     <div className="pmain sempit">

@@ -4,29 +4,23 @@ import { notFound } from "next/navigation";
 import { Ikon } from "@/components/Ikon";
 import { LencanaStatus } from "@/components/portal/LencanaStatus";
 import { SampulKategori } from "@/components/portal/SampulKategori";
-import { dataAwal } from "@/lib/data";
 import { JENIS } from "@/lib/kategori";
-import { dataPortal } from "@/lib/logika";
-import type { LaporanPortal } from "@/lib/tipe";
+import { semuaLaporanPortal } from "@/lib/sumber";
 
-const semua = (): LaporanPortal[] => dataPortal(dataAwal).flatMap((g) => g.lapor);
-
-export function generateStaticParams() {
-  return semua().map((l) => ({ tiket: l.tiket }));
-}
+export const revalidate = 0;
 
 export async function generateMetadata(
   props: PageProps<"/portal/laporan/[tiket]">,
 ): Promise<Metadata> {
   const { tiket } = await props.params;
-  const l = semua().find((x) => x.tiket === tiket);
+  const l = (await semuaLaporanPortal()).find((x) => x.tiket === tiket);
   if (!l) return { title: "Laporan tidak ditemukan" };
   return { title: `${l.ringkas} | Portal Laporan Warga`, description: l.ringkas };
 }
 
 export default async function RincianLaporan(props: PageProps<"/portal/laporan/[tiket]">) {
   const { tiket } = await props.params;
-  const l = semua().find((x) => x.tiket === tiket);
+  const l = (await semuaLaporanPortal()).find((x) => x.tiket === tiket);
   if (!l) notFound();
 
   const jenis = JENIS[l.jenis];

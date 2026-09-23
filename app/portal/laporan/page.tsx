@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import { PortalDaftar } from "@/components/PortalDaftar";
-import { dataAwal } from "@/lib/data";
-import { dataPortal } from "@/lib/logika";
+import { isiPortal } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Daftar Laporan",
   description: "Semua laporan warga Kota Bandung beserta status penanganannya.",
 };
 
-export default function DaftarLaporan() {
-  // Data dibentuk di server lebih dulu. Hanya kolom yang memang tampil di
-  // halaman publik yang ikut terkirim, jadi identitas pelapor, teks mentah,
-  // catatan kerja instansi, dan koordinat tidak pernah sampai ke peramban.
-  const kelompok = dataPortal(dataAwal);
+export const revalidate = 0;
+
+export default async function DaftarLaporan() {
+  const { kelompok } = await isiPortal();
 
   return (
     <div className="pmain">

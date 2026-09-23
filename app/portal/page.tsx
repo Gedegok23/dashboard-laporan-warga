@@ -2,14 +2,20 @@ import Link from "next/link";
 import { Ikon } from "@/components/Ikon";
 import { GambarBeranda } from "@/components/portal/GambarBeranda";
 import { KartuLaporan } from "@/components/portal/KartuLaporan";
-import { BATAS_HARI_KERJA, dataAwal } from "@/lib/data";
+import { BATAS_HARI_KERJA } from "@/lib/data";
 import { JENIS, URUT_JENIS } from "@/lib/kategori";
-import { dataPortal, hitungPortal } from "@/lib/logika";
+import { isiPortal } from "@/lib/sumber";
 
-export default function Beranda() {
-  const kelompok = dataPortal(dataAwal);
+export const revalidate = 0;
+
+export default async function Beranda() {
+  const { kelompok } = await isiPortal();
   const semua = kelompok.flatMap((g) => g.lapor).sort((a, b) => b.ts - a.ts);
-  const h = hitungPortal(dataAwal);
+  const h = {
+    total: semua.length,
+    clear: semua.filter((l) => l.status === "clear").length,
+    lewat: 0,
+  };
   const jenisAda = URUT_JENIS.filter((j) => semua.some((l) => l.jenis === j));
 
   const angka = [

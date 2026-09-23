@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { Ikon } from "@/components/Ikon";
 import { PetaKlien } from "@/components/portal/PetaKlien";
-import { dataAwal } from "@/lib/data";
 import { JENIS, URUT_JENIS } from "@/lib/kategori";
-import { dataPortal } from "@/lib/logika";
+import { semuaLaporanPortal } from "@/lib/sumber";
 
 export const metadata: Metadata = {
   title: "Peta",
   description: "Sebaran laporan warga Kota Bandung di peta, ditampilkan secara umum.",
 };
 
-export default function HalamanPeta() {
-  const daftar = dataPortal(dataAwal).flatMap((g) => g.lapor);
+export const revalidate = 0;
+
+export default async function HalamanPeta() {
+  const daftar = (await semuaLaporanPortal()).filter((l) => l.titik[0] !== 0);
   const jenisAda = URUT_JENIS.filter((j) => daftar.some((l) => l.jenis === j));
 
   return (
