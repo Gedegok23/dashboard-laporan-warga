@@ -57,6 +57,8 @@ export type Foto = {
   gps: string;
   /** Jarak antara koordinat EXIF dan lokasi yang ditulis warga, null bila cocok. */
   selisih: string | null;
+  /** Id berkas di penyimpanan objek. Null bila fotonya belum pernah tersimpan. */
+  berkasId?: number | null;
 };
 
 export type PeranLog = "warga" | "bot" | "sistem" | "petugas";

@@ -350,10 +350,11 @@ function keLaporanMeja(r: BarisMeja): Laporan {
     koordinat: r.latitude && r.longitude ? `${r.latitude}, ${r.longitude}` : "belum dicatat",
     skor: r.skor ? Number(r.skor) : 0,
     foto: {
-      nama: r.foto_pelapor ?? "tidak ada lampiran",
-      ukuran: r.foto_pelapor ? "-" : "-",
+      nama: r.foto_pelapor ?? (r.foto_berkas_id ? "foto dari pelapor" : "tidak ada lampiran"),
+      ukuran: "-",
       gps: "-",
       selisih: null,
+      berkasId: r.foto_berkas_id,
     },
     pelapor: { nama: pegangan, namaPenuh: pegangan, wa: "tidak diminta", waPenuh: "tidak diminta agent" },
     riwayat,

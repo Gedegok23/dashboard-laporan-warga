@@ -21,6 +21,7 @@ import {
   duplikatAksi,
   instansiAksi,
   jadwalAksi,
+  kategoriAksi,
   kirimUmpanAksi,
   lanjutAksi,
   mundurAksi,
@@ -67,15 +68,15 @@ export function MejaProvider({
   // Keadaan terakhir, dibaca kirimGabung saat menyusun panggilan ke server.
   // Disetel lewat effect, bukan saat render: ref tidak boleh ditulis di render.
   const simpanan = useRef(s);
+  // Aksi yang menunggu dikirim ke server, diperiksa dulu apakah benar mengubah isi.
+  const antre = useRef<{ a: Aksi; sebelum: Keadaan }[]>([]);
+  const tundaCatatan = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const jamKini = useCallback(() => {
     const lewat = mulai.current ? Math.floor((Date.now() - mulai.current) / 60_000) : 0;
     return formatJam(MENIT_MULAI + lewat);
   }, []);
 
-  useEffect(() => {
-    simpanan.current = s;
-  });
 
   // `revalidatePath` di server action mengirim data baru lewat prop. Tanpa ini
   // reducer akan terus memakai salinan pertamanya dan layar melenceng dari DB.
@@ -109,8 +110,6 @@ export function MejaProvider({
           return buktiTambahAksi(t);
         case "bukti-hapus":
           return buktiHapusAksi(t, a.nama);
-        case "catatan":
-          return catatanAksi(t, a.teks);
         case "kirim-umpan":
           return kirimUmpanAksi(t, l.draf ?? "", se);
         case "lanjut":
@@ -121,6 +120,8 @@ export function MejaProvider({
           return duplikatAksi(t, a.hapus);
         case "instansi":
           return instansiAksi(t, a.nama);
+        case "kategori":
+          return kategoriAksi(t, k.data[a.tujuan]?.id ?? "");
         default:
           return;
       }
@@ -128,19 +129,46 @@ export function MejaProvider({
     [],
   );
 
-  const kirimGabung = useCallback(
-    (a: Aksi) => {
-      const sebelum = simpanan.current;
-      kirim(a);
-      if (sebelum.langsung) {
-        kirimKeServer(a, sebelum).catch((e) => {
-          console.error("[meja] server menolak aksi:", e);
-          setGagal(e instanceof Error ? e.message : "Server menolak perubahan.");
-        });
+  const kirimGabung = useCallback((a: Aksi) => {
+    // Aksi ditahan dulu, tidak langsung dikirim. Reducer bisa menolaknya
+    // diam-diam (laporan duplikat, regu yang sama, tutup tanpa bukti); kalau
+    // isinya tidak berubah, server tidak perlu tahu apa-apa.
+    if (simpanan.current.langsung) antre.current.push({ a, sebelum: simpanan.current });
+    kirim(a);
+  }, []);
+
+  useEffect(() => {
+    const tertunda = antre.current;
+    antre.current = [];
+    for (const { a, sebelum } of tertunda) {
+      // Reducer mengembalikan objek data yang sama persis bila aksinya ditolak.
+      if (sebelum.data === s.data && a.t !== "catatan" && a.t !== "draf") continue;
+      if (a.t === "catatan") {
+        // Mengetik catatan: satu tulisan setelah jeda, bukan satu transaksi
+        // database per ketukan tombol.
+        if (tundaCatatan.current) clearTimeout(tundaCatatan.current);
+        const teks = a.teks;
+        const l = s.data[s.kls]?.lapor[s.lap];
+        if (!l) continue;
+        tundaCatatan.current = setTimeout(() => {
+          catatanAksi(l.tiket, teks).catch((e) => {
+            console.error("[meja] catatan gagal disimpan:", e);
+            setGagal(e instanceof Error ? e.message : "Catatan gagal disimpan.");
+          });
+        }, 800);
+        continue;
       }
-    },
-    [kirimKeServer],
-  );
+      kirimKeServer(a, sebelum).catch((e) => {
+        console.error("[meja] server menolak aksi:", e);
+        setGagal(e instanceof Error ? e.message : "Server menolak perubahan.");
+      });
+    }
+    simpanan.current = s;
+  });
+
+  useEffect(() => () => {
+    if (tundaCatatan.current) clearTimeout(tundaCatatan.current);
+  }, []);
 
   const nilai = useMemo(
     () => ({ s, kirim: kirimGabung, jamKini, jamTampil, gagal, tutupGagal: () => setGagal(null) }),

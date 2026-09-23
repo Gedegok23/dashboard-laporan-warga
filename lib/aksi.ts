@@ -370,3 +370,25 @@ export async function instansiAksi(tiket: string, nama: string) {
   });
   segarkan();
 }
+
+/**
+ * Pindahkan laporan ke klaster lain.
+ *
+ * Hanya berlaku untuk klaster nyata. Klaster sintetis dibentuk aplikasi dari
+ * jenis masalah dan tidak punya baris sendiri di database, jadi memindahkan
+ * ke sana tidak berarti apa-apa.
+ */
+export async function kategoriAksi(tiket: string, klasterKode: string) {
+  await transaksi(async (c) => {
+    const l = await idDari(c, tiket);
+    if (!l) return;
+    const k = (await c.query<{ id: number; kategori: string }>(
+      "SELECT id, kategori FROM klaster WHERE kode = $1",
+      [klasterKode],
+    )).rows[0];
+    if (!k || k.id === l.klaster_id) return;
+    await c.query("UPDATE laporan SET klaster_id = $2 WHERE id = $1", [l.id, k.id]);
+    await catat(c, l.id, "Kategori dikoreksi", `Dipindahkan ke klaster ${klasterKode} (${k.kategori})`);
+  });
+  segarkan();
+}

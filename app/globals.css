@@ -1057,6 +1057,12 @@ mark {
   border-radius: var(--r-ctl);
   color: var(--ink-3);
 }
+.foto .kotak.foto {
+  object-fit: cover;
+  border-style: solid;
+  border-color: var(--line);
+  padding: 0;
+}
 .foto .kotak span {
   font-size: 10px;
 }

@@ -125,10 +125,21 @@ export function PanelPeriksa() {
       <div className="panel" hidden={s.tab !== "detail"}>
         <div>
           <div className="foto">
-            <div className="kotak">
-              <Ikon nama={l.foto.nama === "tidak ada lampiran" ? "tanpa-kamera" : "kamera"} ukuran={24} />
-              <span>{l.foto.nama === "tidak ada lampiran" ? "Tanpa foto" : "Pratinjau"}</span>
-            </div>
+            {l.foto.berkasId ? (
+              // Petugas yang sudah masuk menerima berkas aslinya, lengkap dengan
+              // EXIF, karena koordinat itu yang dibandingkan dengan lokasi laporan.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className="kotak foto"
+                src={`/berkas/${l.foto.berkasId}`}
+                alt="Foto yang dikirim pelapor"
+              />
+            ) : (
+              <div className="kotak">
+                <Ikon nama={l.foto.nama === "tidak ada lampiran" ? "tanpa-kamera" : "kamera"} ukuran={24} />
+                <span>{l.foto.nama === "tidak ada lampiran" ? "Tanpa foto" : "Pratinjau"}</span>
+              </div>
+            )}
             <dl>
               <dt>Berkas</dt>
               <dd>{l.foto.nama}</dd>
@@ -169,8 +180,11 @@ export function PanelPeriksa() {
               onChange={(e) => kirim({ t: "kategori", tujuan: Number(e.target.value), jam: jamKini() })}
             >
               {s.data.map((x, i) => (
-                <option key={x.id} value={i}>
+                // Klaster sintetis cuma pengelompokan tampilan: tidak punya baris
+                // di database, jadi memindahkan laporan ke sana tidak tersimpan.
+                <option key={x.id} value={i} disabled={s.langsung && Boolean(x.sintetis) && i !== s.kls}>
                   {x.kategori}
+                  {s.langsung && x.sintetis && i !== s.kls ? " (belum bisa dipindah)" : ""}
                 </option>
               ))}
             </select>
