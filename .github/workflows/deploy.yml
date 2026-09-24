@@ -1,0 +1,78 @@
+name: Periksa dan deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  periksa:
+    name: Lint, types, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Types
+        run: pnpm exec tsc --noEmit
+
+      - name: Build
+        run: pnpm build
+
+  deploy:
+    name: Deploy ke VPS
+    needs: periksa
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: http://103.30.146.225:3000/portal
+    steps:
+      - name: Siapkan kunci SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "${{ secrets.VPS_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      # Kunci ini terkunci forced-command di server: satu-satunya hal yang bisa
+      # dijalankannya adalah /root/bin/deploy-meja.sh. Tidak ada shell, tidak ada
+      # forwarding. Skrip itu yang git reset, pnpm build, restart unit, cek sehat,
+      # dan rollback sendiri kalau build atau health check gagal.
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/deploy \
+              -o IdentitiesOnly=yes \
+              -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=15 \
+              -p "${{ secrets.VPS_PORT }}" \
+              "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}" \
+              "deploy ${{ github.sha }}"
+
+      - name: Cek dari luar
+        run: |
+          for i in $(seq 1 15); do
+            if curl -fsS -o /dev/null --max-time 10 http://${{ secrets.VPS_HOST }}:3000/portal; then
+              echo "portal hidup"; exit 0
+            fi
+            sleep 4
+          done
+          echo "portal tidak menjawab dari luar" >&2; exit 1
