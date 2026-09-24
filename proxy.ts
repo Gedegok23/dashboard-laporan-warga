@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { MEREK } from "@/lib/merek";
+
 /**
  * Dashboard instansi berisi identitas pelapor, catatan kerja internal, dan
  * tombol yang mengubah status laporan warga. Portal warga terbuka untuk umum,
@@ -44,7 +46,7 @@ export function proxy(request: NextRequest) {
     {
       status: 401,
       headers: {
-        "WWW-Authenticate": belumDisetel ? "" : 'Basic realm="Meja Laporan Warga", charset="UTF-8"',
+        "WWW-Authenticate": belumDisetel ? "" : `Basic realm="${MEREK.nama}", charset="UTF-8"`,
         "Content-Type": "text/plain; charset=utf-8",
       },
     },

@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PilihTema } from "@/components/PilihTema";
 import { BOT_TELEGRAM, KOTA, PEMERINTAH } from "@/lib/kota";
+import { MEREK } from "@/lib/merek";
+import { isiPortal } from "@/lib/sumber";
 
 export const metadata: Metadata = {
-  title: { default: "Portal Laporan Warga", template: "%s | Portal Laporan Warga" },
+  title: { default: `${MEREK.nama} · ${MEREK.panjang}`, template: `%s | ${MEREK.nama}` },
   description:
     `Cari laporan warga Kota ${KOTA} dan lihat sampai mana penanganannya, dari pengaduan sampai selesai.`,
 };
@@ -18,7 +20,11 @@ const TAUTAN = [
   { href: "/portal/cek-status", label: "Cek Status" },
 ];
 
-export default function TataLetakPortal({ children }: LayoutProps<"/portal">) {
+export default async function TataLetakPortal({ children }: LayoutProps<"/portal">) {
+  // Lencana "Data contoh" hanya benar saat isi memang contoh. isiPortal()
+  // dibungkus cache(), jadi ini berbagi kueri dengan halaman di bawahnya.
+  const { langsung } = await isiPortal();
+
   return (
     <div className="portal">
       <a className="skip" href="#isi">
@@ -29,11 +35,11 @@ export default function TataLetakPortal({ children }: LayoutProps<"/portal">) {
         <div className="pkop-isi">
           <Link href="/portal" className="brand">
             <div className="stempel" aria-hidden>
-              ML
+              {MEREK.monogram}
             </div>
             <div>
-              <p className="pnama">Portal Laporan Warga</p>
-              <p className="sub">{PEMERINTAH}</p>
+              <p className="pnama">{MEREK.nama}</p>
+              <p className="sub">{MEREK.semboyan}</p>
             </div>
           </Link>
 
@@ -48,13 +54,16 @@ export default function TataLetakPortal({ children }: LayoutProps<"/portal">) {
           </nav>
 
           <PilihTema />
-          <span className="tag-contoh">Data contoh</span>
+          {langsung ? null : <span className="tag-contoh">Data contoh</span>}
         </div>
       </header>
 
       <main id="isi">{children}</main>
 
       <footer className="pkaki">
+        <p className="pkaki-merek">
+          <b>{MEREK.nama}</b> &mdash; {MEREK.panjang}. Dikelola {PEMERINTAH}.
+        </p>
         <p>
           Nama dan nomor WhatsApp pelapor tidak ditampilkan di portal. Saat laporan masuk, agent
           hanya menanyakan nama dan nomor WhatsApp, dan tidak pernah meminta NIK.

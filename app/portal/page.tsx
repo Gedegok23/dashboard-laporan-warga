@@ -4,6 +4,7 @@ import { GambarBeranda } from "@/components/portal/GambarBeranda";
 import { KartuLaporan } from "@/components/portal/KartuLaporan";
 import { BATAS_HARI_KERJA } from "@/lib/data";
 import { JENIS, URUT_JENIS } from "@/lib/kategori";
+import { KANAL } from "@/lib/kota";
 import { isiPortal } from "@/lib/sumber";
 
 export const revalidate = 0;
@@ -35,8 +36,8 @@ export default async function Beranda() {
         <div className="pintro-teks">
           <h2>Sampai mana laporan Anda?</h2>
           <p className="plead">
-            Setiap laporan warga yang masuk lewat bot WhatsApp dan web tercatat di sini, lengkap
-            dengan siapa yang menanganinya dan sampai langkah mana prosesnya.
+            Setiap laporan warga yang masuk lewat {KANAL} tercatat di sini, lengkap dengan siapa
+            yang menanganinya dan sampai langkah mana prosesnya.
           </p>
           <div className="pintro-aksi">
             <Link className="btn utama" href="/portal/laporan">

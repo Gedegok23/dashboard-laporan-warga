@@ -7,6 +7,7 @@ import { useMeja } from "./MejaProvider";
 import { petugas } from "@/lib/data";
 import { PilihTema } from "./PilihTema";
 import { KANAL, PEMERINTAH } from "@/lib/kota";
+import { MEREK } from "@/lib/merek";
 
 export function TopBar() {
   const { s, kirim, jamTampil } = useMeja();
@@ -29,10 +30,10 @@ export function TopBar() {
     <header className="topbar">
       <div className="brand">
         <div className="stempel" aria-hidden>
-          ML
+          {MEREK.monogram}
         </div>
         <div>
-          <h1>Meja Laporan Warga</h1>
+          <h1>{MEREK.nama}</h1>
           <p className="sub">
             {PEMERINTAH} &middot; kanal {KANAL}
           </p>
@@ -74,7 +75,7 @@ export function TopBar() {
           Portal warga
         </Link>
         <PilihTema />
-        <span className="tag-contoh">Data contoh</span>
+        {s.langsung ? null : <span className="tag-contoh">Data contoh</span>}
         <span className="mono">Sinkron RDB {jamTampil}</span>
         <span className="petugas">
           <span className="av" aria-hidden>

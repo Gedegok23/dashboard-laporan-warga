@@ -1,14 +1,22 @@
-# Meja Laporan Warga
+# KITO — Kanal Informasi, Transparansi & Observasi
 
-Dashboard triase laporan warga untuk staf instansi pemerintah kota. Laporan masuk lewat
-bot WhatsApp dan formulir web, dikelompokkan otomatis menjadi klaster laporan serupa,
-lalu diverifikasi, didisposisi, dan ditutup oleh petugas dari satu layar.
+> Suaro Kito, Urusan Kito
+
+Dua muka dari satu basis data: **portal warga** yang terbuka untuk umum, dan **meja petugas**
+yang tertutup di baliknya. Laporan masuk lewat bot Telegram, dikelompokkan otomatis menjadi
+klaster laporan serupa, lalu diverifikasi, didisposisi, dan ditutup oleh petugas dari satu layar.
+Tiap perubahan status dikabarkan balik ke pelapor oleh agent.
+
+Nama daerah, kanal, dan nama bot tidak dipaku di halaman — lihat `lib/kota.ts`. Nama produk
+ada di `lib/merek.ts`.
 
 Port dari prototipe HTML satu berkas ke Next.js App Router. Tampilan dan perilakunya sama;
 yang berubah adalah strukturnya menjadi komponen, state, dan data yang bertipe.
 
-> Seluruh isi adalah **data contoh**. Nama, NIK, dan nomor telepon dikarang. Koordinat
-> menunjuk ke ruas jalan nyata di Kota Bandung supaya tata letak dan panjang teks realistis.
+> Tanpa `MEJA_DATABASE_URL`, aplikasi jalan dari **data contoh** di `lib/data.ts` supaya
+> pengembangan lokal tidak butuh database; koordinatnya menunjuk ke ruas jalan nyata di Kota
+> Bandung supaya tata letak dan panjang teks realistis. Saat itu terjadi, kop menampilkan
+> lencana "Data contoh". Dengan database tersambung, lencana itu hilang dan isinya nyata.
 
 ## Menjalankan
 

@@ -1,5 +1,5 @@
 /*
-  Sistem token Meja Laporan Warga.
+  Sistem token KITO.
   Tahapan tindak lanjut memakai satu ramp teal berurutan (t0 sampai t3); merah
   hanya dipakai untuk satu arti, yaitu batas tindak lanjut yang terlampaui.
   Semua warna didefinisikan di :root, lalu ditimpa untuk tema gelap.
@@ -2559,6 +2559,15 @@ mark {
 }
 .pkaki a {
   color: var(--accent-ink);
+}
+/* Baris merek dibedakan dari catatan kaki lain: ink-1, bukan ink-2 yang
+   dipakai badan kaki. */
+.pkaki-merek {
+  color: var(--ink-1);
+}
+.pkaki-merek b {
+  font-family: var(--cond);
+  letter-spacing: 0.02em;
 }
 
 /* Tiap jenis cuma memetakan token, jadi komponen tidak perlu tahu warnanya. */

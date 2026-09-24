@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Sans_Condensed } from "next/font/google";
+
+import { MEREK } from "@/lib/merek";
+
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -21,9 +24,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Meja Laporan Warga",
+  title: `Meja petugas · ${MEREK.nama}`,
   description:
-    "Dashboard triase laporan warga: klaster laporan serupa, status tindak lanjut per instansi, dan log mentah bot dalam satu meja kerja.",
+    "Meja petugas: klaster laporan serupa, status tindak lanjut per instansi, dan log mentah bot dalam satu tempat.",
 };
 
 export const viewport: Viewport = {
