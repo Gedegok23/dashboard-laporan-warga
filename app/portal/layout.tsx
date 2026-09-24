@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { KANAL_RESMI, KOTA, PEMERINTAH } from "@/lib/kota";
+import { PilihTema } from "@/components/PilihTema";
+import { BOT_TELEGRAM, KOTA, PEMERINTAH } from "@/lib/kota";
 
 export const metadata: Metadata = {
   title: { default: "Portal Laporan Warga", template: "%s | Portal Laporan Warga" },
@@ -46,6 +47,7 @@ export default function TataLetakPortal({ children }: LayoutProps<"/portal">) {
             </ul>
           </nav>
 
+          <PilihTema />
           <span className="tag-contoh">Data contoh</span>
         </div>
       </header>
@@ -62,8 +64,10 @@ export default function TataLetakPortal({ children }: LayoutProps<"/portal">) {
           mirip dikelompokkan jadi satu supaya masalah yang sama tidak dikerjakan berkali-kali.
         </p>
         <p>
-          Belum menemukan laporan Anda? Kirim lewat {KANAL_RESMI} kanal resmi Kota {KOTA}.{" "}
-          <Link href="/">Meja petugas</Link>
+          Belum menemukan laporan Anda? Kirim lewat bot Telegram resmi Kota {KOTA}:{" "}
+          <a href={BOT_TELEGRAM.url} rel="noreferrer">
+            {BOT_TELEGRAM.nama}
+          </a>
         </p>
       </footer>
     </div>

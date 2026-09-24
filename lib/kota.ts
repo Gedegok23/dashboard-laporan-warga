@@ -11,3 +11,11 @@ export const KANAL = process.env.NEXT_PUBLIC_KANAL?.trim() || "bot WhatsApp dan 
 
 /** Kanal untuk kalimat ajakan, contoh "bot WhatsApp kanal resmi Kota Bandung". */
 export const KANAL_RESMI = process.env.NEXT_PUBLIC_KANAL_RESMI?.trim() || "bot WhatsApp";
+
+/** Bot Telegram tempat warga mengirim laporan. */
+export const BOT_TELEGRAM = {
+  nama: process.env.NEXT_PUBLIC_BOT_NAMA?.trim() || "@Palembang_lapor_bot",
+  get url() {
+    return `https://t.me/${this.nama.replace(/^@/, "")}`;
+  },
+};

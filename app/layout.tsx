@@ -39,7 +39,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="id"
       className={`${plexSans.variable} ${plexCond.variable} ${plexMono.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        {/*
+          Dijalankan saat HTML masih diurai, sebelum halaman digambar pertama
+          kali. Tanpa ini pengguna yang memilih gelap akan melihat kilatan
+          terang lebih dulu. Tanpa atribut, CSS mengikuti setelan sistem.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("tema");if(t==="dark"||t==="light")document.documentElement.setAttribute("data-theme",t)}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

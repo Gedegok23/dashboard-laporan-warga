@@ -275,10 +275,25 @@ export async function tindakAksi(tiket: string, nilai: StatusTindak, seKlaster: 
   segarkan();
 }
 
-/** Kabar status disusun dari berkas penanganan, bukan diketik admin. */
+/**
+ * Kabar status disusun dari berkas penanganan, bukan diketik admin.
+ *
+ * Pelapor bisa punya lebih dari satu laporan berjalan, jadi kabar selalu
+ * menyebut nomor dan masalahnya. Tanpa itu, pesan "laporan Anda sedang
+ * ditangani" tidak memberi tahu laporan yang mana.
+ */
 async function tulisKabar(c: Klien, id: number, nilai: StatusTindak) {
-  const r = (await c.query<{ instansi: string | null; regu: string | null; jadwal: string | null; bukti: string }>(
-    `SELECT i.nama AS instansi, pt.regu, p.jadwal,
+  const r = (await c.query<{
+    kode_lacak: string;
+    judul: string;
+    lokasi: string | null;
+    instansi: string | null;
+    regu: string | null;
+    jadwal: string | null;
+    bukti: string;
+  }>(
+    `SELECT l.kode_lacak, l.judul, l.lokasi,
+            i.nama AS instansi, pt.regu, p.jadwal,
             (SELECT count(*) FROM bukti b WHERE b.laporan_id = l.id) AS bukti
        FROM laporan l
        LEFT JOIN instansi i ON i.id = l.instansi_id
@@ -287,14 +302,21 @@ async function tulisKabar(c: Klien, id: number, nilai: StatusTindak) {
       WHERE l.id = $1`,
     [id],
   )).rows[0];
-  const instansi = r?.instansi ?? "instansi terkait";
-  const oleh = r?.regu ? `${r.regu} dari ${instansi}` : instansi;
+  if (!r) return;
+
+  const instansi = r.instansi ?? "instansi terkait";
+  const oleh = r.regu ? `${r.regu} dari ${instansi}` : instansi;
+  // Judul sudah ringkas; lokasi ditambahkan supaya pelapor langsung mengenalinya.
+  const tentang = r.lokasi ? `${r.judul}, di ${r.lokasi}` : r.judul;
+  const kepala = `Laporan ${r.kode_lacak} (${tentang}).`;
+
   const teks =
     nilai === "proses"
-      ? `Laporan Anda sedang ditangani ${oleh}.${r?.jadwal ? ` Jadwal turun lapangan ${r.jadwal}.` : ""} Kami kabari lagi begitu pekerjaannya selesai.`
+      ? `${kepala} Sedang ditangani ${oleh}.${r.jadwal ? ` Jadwal turun lapangan ${r.jadwal}.` : ""} Kami kabari lagi begitu pekerjaannya selesai.`
       : nilai === "selesai"
-        ? `Laporan Anda sudah selesai ditangani ${oleh}, dengan ${r?.bukti ?? 0} bukti dokumentasi dari lapangan. Kalau masalahnya muncul lagi di titik yang sama, balas pesan ini dengan foto terbaru.`
-        : `Laporan Anda kembali ke antrean ${instansi} dan sedang menunggu penjadwalan regu.`;
+        ? `${kepala} Sudah selesai ditangani ${oleh}, dengan ${r.bukti ?? 0} bukti dokumentasi dari lapangan. Kalau masalahnya muncul lagi di titik yang sama, balas pesan ini dengan foto terbaru.`
+        : `${kepala} Kembali ke antrean ${instansi} dan sedang menunggu penjadwalan regu.`;
+
   await c.query("INSERT INTO kabar (laporan_id, status, teks) VALUES ($1,$2,$3)", [id, STATUS_DB[nilai], teks]);
 }
 

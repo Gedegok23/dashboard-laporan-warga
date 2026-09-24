@@ -6,7 +6,17 @@ import { JENIS } from "@/lib/kategori";
 import type { LaporanPortal } from "@/lib/tipe";
 import "leaflet/dist/leaflet.css";
 
-const PUSAT: [number, number] = [-6.914, 107.61];
+/**
+ * Pusat peta dihitung dari titik laporan yang ada, bukan dipaku ke satu kota.
+ * Dengan begitu peta selalu terbuka di wilayah yang datanya benar-benar ada.
+ */
+function pusatDari(daftar: LaporanPortal[]): [number, number] {
+  const titik = daftar.map((l) => l.titik).filter(([a, b]) => a !== 0 || b !== 0);
+  if (!titik.length) return [-2.976, 104.775];
+  const lat = titik.reduce((n, t) => n + t[0], 0) / titik.length;
+  const lng = titik.reduce((n, t) => n + t[1], 0) / titik.length;
+  return [lat, lng];
+}
 
 const WARNA: Record<string, string> = {
   infrastruktur: "#ea580c",
@@ -19,7 +29,7 @@ const WARNA: Record<string, string> = {
 
 export function PetaLaporan({ daftar }: { daftar: LaporanPortal[] }) {
   return (
-    <MapContainer center={PUSAT} zoom={12} scrollWheelZoom className="peta">
+    <MapContainer center={pusatDari(daftar)} zoom={12} scrollWheelZoom className="peta">
       <TileLayer
         attribution='&copy; kontributor <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
