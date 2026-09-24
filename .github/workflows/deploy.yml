@@ -30,6 +30,12 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # PageProps/LayoutProps/RouteContext adalah tipe global yang dihasilkan
+      # Next, bukan bagian dari sumber. Tanpa ini tsc berjalan sebelum tipe itu
+      # ada dan gagal di CI walau lokal lulus.
+      - name: Buat tipe rute
+        run: pnpm exec next typegen
+
       - name: Types
         run: pnpm exec tsc --noEmit
 
