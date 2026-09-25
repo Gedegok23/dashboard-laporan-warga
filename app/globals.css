@@ -3327,6 +3327,12 @@ a.jchip {
   flex: 1 1 16rem;
   font-size: 0.8rem;
 }
+/* Keterangan dan peringatan memakai barisnya sendiri, tidak berdesakan
+   dengan kotak tautan dan tombolnya. */
+.tautanlapangan > p {
+  flex: 1 1 100%;
+  margin: 0;
+}
 
 /* ---- Pengelolaan regu lapangan ---- */
 

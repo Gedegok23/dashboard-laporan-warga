@@ -7,6 +7,7 @@ import { TindakChip } from "./MejaPenanganan";
 import { useMeja } from "./MejaProvider";
 import { buktiTambahAksi, tautanLapanganAksi } from "@/lib/aksi";
 import { BUKTI_MINIMAL, TINDAK } from "@/lib/data";
+import { salinTeks } from "@/lib/salin";
 import {
   cariPetugasDi,
   cukupBukti,
@@ -35,6 +36,8 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
   const petugasKini = cariPetugasDi(daftarPetugas, p.petugas);
   const [tautan, setTautan] = useState<string | null>(null);
   const [galatTautan, setGalatTautan] = useState<string | null>(null);
+  /** null belum dicoba, true tersalin, false gagal dan harus disalin manual. */
+  const [tautanDisalin, setTautanDisalin] = useState<boolean | null>(null);
   const [membuatTautan, mulaiTautan] = useTransition();
   const { cocok, lain } = petugasUntukDi(daftarPetugas, instansiLaporan(l, k));
   const mirip = saudaraKlaster(k, l).length;
@@ -320,14 +323,30 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
               Kirim tautan ini ke {petugasKini?.wa ?? "petugas"} lewat WhatsApp. Berlaku 7 hari, hanya
               untuk laporan ini, dan hanya bisa menambah foto.
             </p>
-            <input className="mono" readOnly value={tautan} onFocus={(e) => e.currentTarget.select()} />
+            <input
+              className="mono"
+              readOnly
+              value={tautan}
+              onFocus={(e) => e.currentTarget.select()}
+              onClick={(e) => e.currentTarget.select()}
+            />
             <button
               className="taut"
               type="button"
-              onClick={() => navigator.clipboard?.writeText(tautan)}
+              onClick={async () => {
+                const berhasil = await salinTeks(tautan);
+                setTautanDisalin(berhasil);
+                if (berhasil) setTimeout(() => setTautanDisalin(null), 2000);
+              }}
             >
-              Salin
+              {tautanDisalin ? "Tersalin" : "Salin"}
             </button>
+            {tautanDisalin === false ? (
+              <p className="bantu galat" role="alert">
+                Peramban menolak menyalin. Klik kotak di atas untuk memilih seluruh tautan, lalu
+                tekan Ctrl+C.
+              </p>
+            ) : null}
           </div>
         ) : null}
         {galatTautan ? <p className="bantu galat">{galatTautan}</p> : null}

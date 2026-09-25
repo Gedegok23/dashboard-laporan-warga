@@ -7,6 +7,7 @@ import { useMeja } from "./MejaProvider";
 import { PanelPenanganan } from "./PanelPenanganan";
 import { Sorot } from "./Sorot";
 import { BATAS_HARI_KERJA, LANJUT, TAHAP } from "@/lib/data";
+import { salinTeks } from "@/lib/salin";
 import {
   cariPetugasDi,
   cukupBukti,
@@ -205,7 +206,7 @@ export function PanelPeriksa() {
             <button
               className="taut"
               type="button"
-              onClick={() => navigator.clipboard?.writeText(l.koordinat).then(() => setDisalin(true))}
+              onClick={async () => setDisalin(await salinTeks(l.koordinat))}
             >
               {disalin ? "Koordinat disalin" : "Salin koordinat"}
             </button>
