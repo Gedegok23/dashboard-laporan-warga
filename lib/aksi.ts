@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { kolam, tahapDari } from "./db";
 import { BUCKET, adaSimpanan, unggahGambar } from "./simpanan";
+import { HARI_BERLAKU, sidik, tokenBaru } from "./tautan";
 import type { StatusTindak } from "./tipe";
 
 /**
@@ -234,6 +235,44 @@ export async function buktiTambahAksi(tiket: string, berkas?: FormData) {
     c.release();
   }
   segarkan();
+}
+
+/**
+ * Terbitkan tautan unggah untuk petugas yang sedang ditugaskan.
+ *
+ * Yang dikembalikan ke admin adalah tokennya apa adanya, sekali ini saja;
+ * database hanya menyimpan hash-nya, jadi tautan yang hilang tidak bisa
+ * dipulihkan, hanya bisa diterbitkan ulang.
+ *
+ * Tautan lama laporan yang sama dicabut lebih dulu: satu laporan cukup punya
+ * satu tautan hidup, supaya yang beredar di WhatsApp tidak menumpuk.
+ */
+export async function tautanLapanganAksi(tiket: string): Promise<string | null> {
+  const token = await transaksi(async (c) => {
+    const l = await idDari(c, tiket);
+    if (!l) return null;
+    const pet = (await c.query<{ petugas_id: number | null }>(
+      "SELECT petugas_id FROM penanganan WHERE laporan_id = $1",
+      [l.id],
+    )).rows[0];
+    if (!pet?.petugas_id) throw new Error("tugaskan petugas lapangan lebih dulu");
+
+    await c.query("UPDATE tautan_lapangan SET dicabut = true WHERE laporan_id = $1 AND dicabut = false", [l.id]);
+    const baru = tokenBaru();
+    await c.query(
+      `INSERT INTO tautan_lapangan (laporan_id, petugas_id, token_hash, kadaluarsa, dibuat_oleh)
+       VALUES ($1, $2, $3, now() + ($4 || ' days')::interval, $5)`,
+      [l.id, pet.petugas_id, sidik(baru), String(HARI_BERLAKU), PETUGAS],
+    );
+    await catat(c, l.id, "Tautan lapangan", "Tautan unggah bukti diterbitkan untuk regu lapangan");
+    return baru;
+  });
+  if (!token) return null;
+
+  const h = await headers();
+  const inang = h.get("x-forwarded-host") ?? h.get("host");
+  const skema = h.get("x-forwarded-proto") ?? "http";
+  return `${skema}://${inang}/lapangan/${token}`;
 }
 
 export async function buktiHapusAksi(tiket: string, nama: string) {

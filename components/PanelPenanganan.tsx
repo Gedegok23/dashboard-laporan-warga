@@ -5,7 +5,7 @@ import { useRef, useState, useTransition } from "react";
 import { Ikon } from "./Ikon";
 import { TindakChip } from "./MejaPenanganan";
 import { useMeja } from "./MejaProvider";
-import { buktiTambahAksi } from "@/lib/aksi";
+import { buktiTambahAksi, tautanLapanganAksi } from "@/lib/aksi";
 import { BUKTI_MINIMAL, TINDAK } from "@/lib/data";
 import {
   cariPetugas,
@@ -33,6 +33,9 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
   const p = penangananLaporan(l);
   const status = statusTindak(l);
   const petugasKini = cariPetugas(p.petugas);
+  const [tautan, setTautan] = useState<string | null>(null);
+  const [galatTautan, setGalatTautan] = useState<string | null>(null);
+  const [membuatTautan, mulaiTautan] = useTransition();
   const { cocok, lain } = petugasUntuk(instansiLaporan(l, k));
   const mirip = saudaraKlaster(k, l).length;
   const miripKerja = saudaraKerja(k, l).length;
@@ -269,15 +272,58 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
             });
           }}
         />
-        <button
-          className="btn"
-          type="button"
-          disabled={!petugasKini || mengunggah}
-          onClick={() => kotakBerkas.current?.click()}
-        >
-          <Ikon nama="unggah" ukuran={17} />
-          {mengunggah ? "Mengunggah..." : "Unggah bukti dari lapangan"}
-        </button>
+        <div className="barisaksi">
+          <button
+            className="btn"
+            type="button"
+            disabled={!petugasKini || mengunggah}
+            onClick={() => kotakBerkas.current?.click()}
+          >
+            <Ikon nama="unggah" ukuran={17} />
+            {mengunggah ? "Mengunggah..." : "Unggah bukti dari lapangan"}
+          </button>
+          <button
+            className="btn"
+            type="button"
+            disabled={!petugasKini || membuatTautan}
+            onClick={() => {
+              setGalatTautan(null);
+              mulaiTautan(async () => {
+                try {
+                  setTautan(await tautanLapanganAksi(l.tiket));
+                } catch (err) {
+                  setGalatTautan(err instanceof Error ? err.message : "Tautan gagal dibuat.");
+                }
+              });
+            }}
+          >
+            <Ikon nama="kamera" ukuran={17} />
+            {membuatTautan ? "Membuat..." : "Buat tautan untuk petugas"}
+          </button>
+        </div>
+        {petugasKini ? null : (
+          <p className="bantu">
+            Tugaskan petugas lapangan lebih dulu di atas. Bukti selalu dicatat atas nama petugas yang
+            dikirim, jadi kedua tombol ini baru hidup setelah ada penugasan.
+          </p>
+        )}
+        {tautan ? (
+          <div className="tautanlapangan">
+            <p className="bantu">
+              Kirim tautan ini ke {petugasKini?.wa ?? "petugas"} lewat WhatsApp. Berlaku 7 hari, hanya
+              untuk laporan ini, dan hanya bisa menambah foto.
+            </p>
+            <input className="mono" readOnly value={tautan} onFocus={(e) => e.currentTarget.select()} />
+            <button
+              className="taut"
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(tautan)}
+            >
+              Salin
+            </button>
+          </div>
+        ) : null}
+        {galatTautan ? <p className="bantu galat">{galatTautan}</p> : null}
         {galatUnggah ? <p className="bantu galat">{galatUnggah}</p> : null}
       </div>
 

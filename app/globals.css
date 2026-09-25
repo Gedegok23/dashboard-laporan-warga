@@ -3223,3 +3223,74 @@ a.jchip {
 .pkaki a {
   color: var(--accent-ink);
 }
+
+/* ---- Halaman petugas lapangan (dibuka dari HP, tanpa login) ---- */
+
+.lapangan {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.lapangan h1 {
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.lapangan .merek {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.lapangan-rinci {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.9rem;
+  margin: 0;
+}
+
+.lapangan-rinci dt {
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+.lapangan-rinci dd {
+  margin: 0;
+}
+
+.lapangan-kirim {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* Tombol utama dibuat besar: dipakai sambil berdiri di lokasi. */
+.lapangan-kirim .btn.utama {
+  justify-content: center;
+  padding: 1rem;
+  font-size: 1.05rem;
+}
+
+.barisaksi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tautanlapangan {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tautanlapangan input {
+  flex: 1 1 16rem;
+  font-size: 0.8rem;
+}
