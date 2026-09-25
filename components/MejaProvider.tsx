@@ -11,9 +11,10 @@ import {
   useState,
 } from "react";
 import type { Dispatch, ReactNode } from "react";
+import { PETUGAS_LAPANGAN } from "@/lib/data";
 import { keadaanAwal, reducer } from "@/lib/reducer";
 import type { Aksi, Keadaan } from "@/lib/reducer";
-import type { Klaster } from "@/lib/tipe";
+import type { Klaster, PetugasLapangan } from "@/lib/tipe";
 import {
   buktiHapusAksi,
   buktiTambahAksi,
@@ -43,6 +44,8 @@ type Isi = {
   jamKini: () => string;
   /** Jam yang ditampilkan di label sinkron, ditahan sampai klien hidup. */
   jamTampil: string;
+  /** Regu lapangan dari database. Kosong berarti meja jalan dari data contoh. */
+  petugas: PetugasLapangan[];
 };
 
 const Konteks = createContext<Isi | null>(null);
@@ -54,12 +57,15 @@ export function MejaProvider({
   children,
   data,
   langsung = false,
+  petugas,
 }: {
   children: ReactNode;
   /** Isi meja dari database. Tanpa ini, meja memakai data contoh. */
   data?: Klaster[];
   /** true bila isi meja datang dari database, bukan data contoh. */
   langsung?: boolean;
+  /** Regu lapangan dari tabel petugas_lapangan. Tanpa ini dipakai data contoh. */
+  petugas?: PetugasLapangan[];
 }) {
   const [s, kirim] = useReducer(reducer, data ? { ...keadaanAwal, data, langsung } : keadaanAwal);
   const [jamTampil, setJamTampil] = useState(JAM_MULAI);
@@ -171,9 +177,24 @@ export function MejaProvider({
     if (tundaCatatan.current) clearTimeout(tundaCatatan.current);
   }, []);
 
+  // Daftar dari database menang; konstanta hanya dipakai saat meja jalan dari
+  // data contoh, supaya tampilan demo tetap terisi.
+  const daftarPetugas = useMemo(
+    () => (petugas && petugas.length ? petugas : PETUGAS_LAPANGAN),
+    [petugas],
+  );
+
   const nilai = useMemo(
-    () => ({ s, kirim: kirimGabung, jamKini, jamTampil, gagal, tutupGagal: () => setGagal(null) }),
-    [s, kirimGabung, jamKini, jamTampil, gagal],
+    () => ({
+      s,
+      kirim: kirimGabung,
+      jamKini,
+      jamTampil,
+      gagal,
+      tutupGagal: () => setGagal(null),
+      petugas: daftarPetugas,
+    }),
+    [s, kirimGabung, jamKini, jamTampil, gagal, daftarPetugas],
   );
 
   return <Konteks.Provider value={nilai}>{children}</Konteks.Provider>;

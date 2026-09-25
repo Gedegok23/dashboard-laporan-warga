@@ -8,13 +8,13 @@ import { useMeja } from "./MejaProvider";
 import { buktiTambahAksi, tautanLapanganAksi } from "@/lib/aksi";
 import { BUKTI_MINIMAL, TINDAK } from "@/lib/data";
 import {
-  cariPetugas,
+  cariPetugasDi,
   cukupBukti,
   instansiLaporan,
   kabarTerakhir,
   penangananLaporan,
   penerimaUmpan,
-  petugasUntuk,
+  petugasUntukDi,
   saudaraKerja,
   saudaraKlaster,
   statusTindak,
@@ -25,18 +25,18 @@ import type { Klaster, Laporan, StatusTindak } from "@/lib/tipe";
 const LANGKAH: StatusTindak[] = ["belum", "proses", "selesai"];
 
 export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
-  const { s, kirim, jamKini } = useMeja();
+  const { s, kirim, jamKini, petugas: daftarPetugas } = useMeja();
   const kotakBerkas = useRef<HTMLInputElement>(null);
   const [mengunggah, mulaiUnggah] = useTransition();
   const [galatUnggah, setGalatUnggah] = useState<string | null>(null);
 
   const p = penangananLaporan(l);
   const status = statusTindak(l);
-  const petugasKini = cariPetugas(p.petugas);
+  const petugasKini = cariPetugasDi(daftarPetugas, p.petugas);
   const [tautan, setTautan] = useState<string | null>(null);
   const [galatTautan, setGalatTautan] = useState<string | null>(null);
   const [membuatTautan, mulaiTautan] = useTransition();
-  const { cocok, lain } = petugasUntuk(instansiLaporan(l, k));
+  const { cocok, lain } = petugasUntukDi(daftarPetugas, instansiLaporan(l, k));
   const mirip = saudaraKlaster(k, l).length;
   const miripKerja = saudaraKerja(k, l).length;
   // Klaster sintetis cuma pengelompokan tampilan: di database laporannya tidak

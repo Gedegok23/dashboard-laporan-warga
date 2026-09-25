@@ -8,7 +8,7 @@ import { PanelPenanganan } from "./PanelPenanganan";
 import { Sorot } from "./Sorot";
 import { BATAS_HARI_KERJA, INSTANSI, LANJUT, TAHAP, petugas } from "@/lib/data";
 import {
-  cariPetugas,
+  cariPetugasDi,
   cukupBukti,
   instansiLaporan,
   laporCocok,
@@ -17,7 +17,7 @@ import {
 } from "@/lib/logika";
 
 export function PanelPeriksa() {
-  const { s, kirim, jamKini } = useMeja();
+  const { s, kirim, jamKini, petugas: daftarPetugas } = useMeja();
   const [disalin, setDisalin] = useState(false);
 
   const k = s.data[s.kls];
@@ -44,7 +44,7 @@ export function PanelPeriksa() {
   // Penutupan lewat tab Detail memakai aturan bukti yang sama dengan meja penanganan.
   const langkahTerkunci = langkah?.ke === 3 && !cukupBukti(l);
   const tugas = penangananLaporan(l);
-  const petugasLapangan = cariPetugas(tugas.petugas);
+  const petugasLapangan = cariPetugasDi(daftarPetugas, tugas.petugas);
 
   return (
     <aside className="periksa" id="periksa" aria-label="Rincian laporan terpilih">
