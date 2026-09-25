@@ -253,6 +253,8 @@ type BarisMeja = BarisDb & {
   petugas_kode: string | null;
   catatan: string | null;
   telegram_user: string | null;
+  pelapor_nama: string | null;
+  pelapor_wa: string | null;
   bukti_rinci: { nama: string; ukuran: string | null; gps: string | null; oleh: string | null; diunggah_at: string; berkas_id: number | null }[] | null;
   umpan_semua: { teks: string; oleh: string; penerima: number; created_at: string }[] | null;
   kabar_semua: { teks: string; status: string; penerima: number; created_at: string }[] | null;
@@ -262,7 +264,7 @@ const SQL_MEJA = `
   SELECT l.id AS laporan_id, l.kode_lacak, l.judul, l.deskripsi, l.status, l.jenis,
          l.lokasi, l.kelurahan, l.kecamatan, l.duplikat, l.created_at, l.foto_pelapor,
          l.latitude, l.longitude, l.skor, l.urgensi, l.instansi_id, l.klaster_id, l.foto_berkas_id,
-         l.telegram_user,
+         l.telegram_user, l.pelapor_nama, l.pelapor_wa,
          i.nama AS instansi, i.sla_hari,
          k.kategori AS klaster_kategori, k.kode AS klaster_kode, k.jenis AS klaster_jenis,
          k.wilayah AS klaster_wilayah, k.ambang AS klaster_ambang,
@@ -321,8 +323,12 @@ function keLaporanMeja(r: BarisMeja): Laporan {
     s.catatan ?? "",
     pendek(new Date(s.created_at)),
   ]);
-  // Agent dilarang menanyakan nama dan nomor. Yang ada cuma pegangan Telegram.
+  // Nama dan nomor WA hanya ada bila pelapor memberikannya sendiri setelah
+  // laporan tersimpan; agent tidak pernah memaksa. Kalau kosong, yang tersisa
+  // cuma pegangan Telegram, dan itu pun bisa tidak ada.
   const pegangan = r.telegram_user ? `@${r.telegram_user}` : "Lewat bot Telegram";
+  const namaPelapor = r.pelapor_nama?.trim() || pegangan;
+  const waPelapor = r.pelapor_wa?.trim() || null;
   const tambahan: BarisLog[] = (r.kabar_semua ?? [])
     .slice()
     .reverse()
@@ -356,7 +362,12 @@ function keLaporanMeja(r: BarisMeja): Laporan {
       selisih: null,
       berkasId: r.foto_berkas_id,
     },
-    pelapor: { nama: pegangan, namaPenuh: pegangan, wa: "tidak diminta", waPenuh: "tidak diminta agent" },
+    pelapor: {
+      nama: namaPelapor,
+      namaPenuh: r.pelapor_nama?.trim() ? `${r.pelapor_nama.trim()} (${pegangan})` : pegangan,
+      wa: waPelapor ? `+${waPelapor}` : "tidak diberikan",
+      waPenuh: waPelapor ? `+${waPelapor}` : "pelapor tidak memberikan nomor",
+    },
     riwayat,
     duplikat: Boolean(r.duplikat),
     // Instansi laporan diambil dari kolomnya sendiri, bukan diwarisi klaster,
