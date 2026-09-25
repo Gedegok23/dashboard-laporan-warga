@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import { Ikon } from "./Ikon";
 import { useMeja } from "./MejaProvider";
 import { PilihTema } from "./PilihTema";
+import { keluarAksi } from "@/app/masuk/masuk";
 import { KANAL, PEMERINTAH } from "@/lib/kota";
 import { MEREK } from "@/lib/merek";
 
@@ -89,6 +90,12 @@ export function TopBar() {
             <span style={{ fontSize: 11 }}>{PEMERINTAH}</span>
           </span>
         </span>
+        <form action={keluarAksi}>
+          <button className="keluar" type="submit" title="Keluar dari meja petugas">
+            <Ikon nama="keluar" ukuran={16} />
+            <span className="sr">Keluar</span>
+          </button>
+        </form>
       </div>
     </header>
   );

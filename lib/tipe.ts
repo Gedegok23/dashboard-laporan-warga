@@ -2,6 +2,7 @@ export type Tahap = 0 | 1 | 2 | 3;
 
 export type NamaIkon =
   | "cari"
+  | "keluar"
   | "hapus"
   | "kotak-masuk"
   | "tunggu"

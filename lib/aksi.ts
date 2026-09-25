@@ -1,40 +1,27 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { kolam, tahapDari } from "./db";
 import { BUCKET, adaSimpanan, unggahGambar } from "./simpanan";
+import { NAMA_COOKIE, bacaSesi } from "./sesi";
 import { HARI_BERLAKU, sidik, tokenBaru } from "./tautan";
 import type { StatusTindak } from "./tipe";
 
 /**
  * Server Action punya endpoint sendiri yang bisa dipanggil dari rute mana pun,
- * termasuk `/portal` yang sengaja dibiarkan publik. Proxy saja tidak cukup:
- * tiap aksi harus memeriksa kredensialnya sendiri.
+ * termasuk `/portal` dan `/masuk` yang sengaja dibiarkan publik. Proxy saja
+ * tidak cukup: tiap aksi harus memeriksa kredensialnya sendiri.
+ *
+ * Sumber kebenarannya sekarang cookie sesi, sama seperti proxy, supaya hanya
+ * ada satu cara masuk yang perlu dijaga benar.
  */
 async function pastikanPetugas() {
-  const user = process.env.MEJA_ADMIN_USER;
-  const pass = process.env.MEJA_ADMIN_PASS;
-  if (!user || !pass) throw new Error("meja petugas belum dibuka di server ini");
-  const h = (await headers()).get("authorization");
-  if (!h?.startsWith("Basic ")) throw new Error("perlu masuk sebagai petugas instansi");
-  let isi: string;
-  try {
-    isi = atob(h.slice(6));
-  } catch {
-    throw new Error("perlu masuk sebagai petugas instansi");
+  if (!process.env.MEJA_ADMIN_USER || !process.env.MEJA_ADMIN_PASS) {
+    throw new Error("meja petugas belum dibuka di server ini");
   }
-  const i = isi.indexOf(":");
-  if (i < 0 || !bandingAman(isi.slice(0, i), user) || !bandingAman(isi.slice(i + 1), pass)) {
-    throw new Error("perlu masuk sebagai petugas instansi");
-  }
-}
-
-function bandingAman(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let beda = 0;
-  for (let i = 0; i < a.length; i += 1) beda |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return beda === 0;
+  const akun = await bacaSesi((await cookies()).get(NAMA_COOKIE)?.value);
+  if (!akun) throw new Error("perlu masuk sebagai petugas instansi");
 }
 
 /** Penanda tindakan dashboard dipetakan ke kolom `status` milik agent. */

@@ -41,6 +41,7 @@ import {
   UserPlus,
   UsersThree,
   Warning,
+  SignOut,
   Wrench,
   X,
 } from "@phosphor-icons/react";
@@ -52,6 +53,7 @@ import type { NamaIkon } from "@/lib/tipe";
  */
 const PETA = {
   cari: MagnifyingGlass,
+  keluar: SignOut,
   hapus: X,
   "kotak-masuk": Tray,
   tunggu: CircleDashed,

@@ -3097,7 +3097,8 @@ a.jchip {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
   }
-  .btn:active {
+  .btn:active,
+  .keluar:active {
     transform: none;
   }
   .toast {
@@ -3395,4 +3396,189 @@ a.jchip {
 .petugastabel .barisaksi {
   gap: 0.75rem;
   align-items: center;
+}
+
+/* ---------- halaman masuk ----------
+
+   Satu kolom terpusat. Di seluruh aplikasi tata letak terpusat dihindari,
+   tapi layar ini punya satu pekerjaan dan tidak ada isi lain yang bersaing,
+   jadi memusatkannya benar di sini.
+
+   Kontras dihitung dari nilai token, bukan ditaksir. Terang: ink 17.97:1,
+   ink-2 6.19:1, on-accent di atas accent 9.40:1, kritis di atas kritis-soft
+   5.44:1. Gelap: 14.42, 6.94, 9.37, 6.64. Semua lolos AA untuk teks.
+   `--ink-3` sengaja tidak dipakai untuk teks di sini: 3.69:1 terang dan
+   4.48:1 gelap, keduanya di bawah 4.5:1. */
+.masuk {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  gap: 24px;
+  padding: 32px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+  background: var(--paper);
+}
+.masuk-kartu {
+  align-self: center;
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  padding: 26px 24px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.masuk-kop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.masuk-kop > div:nth-child(2) {
+  margin-right: auto;
+  min-width: 0;
+}
+.masuk-merek {
+  margin: 0;
+  font-family: var(--cond);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+.masuk-semboyan {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.masuk h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.masuk-alasan {
+  margin: -6px 0 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.masuk-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+/* Label di atas kolom, bukan placeholder yang hilang begitu diketik:
+   text-fields.md > Best practices menyarankan label terpisah sebagai
+   pengingat maksud kolom. */
+.masuk-isian {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.masuk-isian label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.masuk-isian input {
+  /* 44px: accessibility.md > sasaran sentuh, 44x44 pt untuk jari. Kontrol
+     lain di meja ini 34px karena dipakai dengan penunjuk di layar lebar;
+     pintu masuk dibuka dari ponsel juga. */
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+.masuk-isian input:hover {
+  border-color: var(--ink-3);
+}
+.masuk-isian input:disabled {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+
+.masuk-tombol {
+  justify-content: center;
+  min-height: 44px;
+  font-size: 14px;
+}
+.masuk-tombol:disabled {
+  cursor: progress;
+  filter: none;
+  opacity: 0.75;
+}
+
+.masuk-galat {
+  margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 9px 11px;
+  border-radius: var(--r-ctl);
+  background: var(--kritis-soft);
+  color: var(--kritis);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.masuk-galat svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.masuk-jejak {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.masuk-jejak svg {
+  flex: none;
+}
+
+.masuk-kaki {
+  max-width: 380px;
+  text-align: center;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.masuk-kaki p {
+  margin: 0;
+}
+.masuk-kaki p + p {
+  margin-top: 4px;
+}
+.masuk-kaki a {
+  color: var(--accent-ink);
+}
+
+/* Tombol keluar di kop meja. */
+.keluar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.keluar:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+.keluar:active {
+  transform: translateY(1px);
 }

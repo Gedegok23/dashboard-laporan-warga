@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Regu lapangan | Meja Laporan Warga" 
  * Daftar ini yang dipakai penugasan dan yang menentukan atas nama siapa bukti
  * dokumentasi dicatat, jadi tabelnya harus bisa diurus tanpa membuka SQL.
  *
- * Halaman ada di balik Basic Auth yang sama dengan meja (lihat proxy.ts).
+ * Halaman ada di balik sesi yang sama dengan meja (lihat proxy.ts).
  */
 export default async function Petugas(props: PageProps<"/petugas">) {
   const { ubah } = await props.searchParams;
