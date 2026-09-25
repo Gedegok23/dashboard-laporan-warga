@@ -2221,13 +2221,23 @@ mark {
     box-shadow 0.18s ease,
     border-color 0.18s ease;
 }
-.kartu:hover {
-  transform: translateY(-2px);
-  border-color: var(--line-strong);
-  box-shadow: var(--angkat);
+/* Pada layar sentuh, :hover menempel setelah ketukan sampai ada ketukan di
+   tempat lain, jadi kartu yang terangkat tidak pernah turun lagi. Efek yang
+   bergerak dibatasi ke penunjuk yang benar-benar bisa melayang. */
+@media (hover: hover) {
+  .kartu:hover {
+    transform: translateY(-2px);
+    border-color: var(--line-strong);
+    box-shadow: var(--angkat);
+  }
+  .kartu:hover .kartu-ringkas {
+    color: var(--accent-ink);
+  }
 }
-.kartu:hover .kartu-ringkas {
-  color: var(--accent-ink);
+/* Fokus papan ketik tidak ikut bergerak: penanda fokus sudah cukup, dan
+   menggeser elemen yang baru difokus membuat posisinya sulit diikuti. */
+.kartu:focus-visible {
+  border-color: var(--line-strong);
 }
 
 .kartu-atas {
@@ -3071,12 +3081,21 @@ a.jchip {
   }
 }
 
+/* Durasi dipangkas hampir nol, bukan disetel `none`. Transisi yang dimatikan
+   sama sekali tidak pernah memicu transitionend, dan Leaflet menunggu
+   peristiwa itu untuk menyelesaikan animasi zoom-nya; animasinya menggantung.
+   Gerak yang dijadwalkan JavaScript tidak terikat CSS sama sekali dan
+   diperiksa terpisah di lib/gerak.ts. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    transition: none !important;
-    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
   .btn:active {
     transform: none;
@@ -3084,6 +3103,19 @@ a.jchip {
   .toast {
     transform: none;
   }
+  .kartu:hover {
+    transform: none;
+  }
+}
+
+/* Saat tema berganti, tiap properti berwarna yang punya transisi ikut
+   beranimasi serentak dan seluruh halaman terlihat luntur selama 0,18 detik.
+   PilihTema memasang atribut ini selama dua frame, cukup untuk menelan
+   pergantian itu, lalu melepasnya supaya interaksi biasa tetap halus. */
+:root[data-ganti-tema] *,
+:root[data-ganti-tema] *::before,
+:root[data-ganti-tema] *::after {
+  transition: none !important;
 }
 
 @media (max-width: 1180px) {

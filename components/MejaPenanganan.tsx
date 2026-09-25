@@ -5,6 +5,7 @@ import { useMeja } from "./MejaProvider";
 import { Sorot } from "./Sorot";
 import { TINDAK } from "@/lib/data";
 import { balasanWarga, barisPenanganan, hitungTindak, penangananLaporan } from "@/lib/logika";
+import { gulirKe } from "@/lib/gerak";
 import type { NamaIkon, SaringTindak, StatusTindak, UrutTindak } from "@/lib/tipe";
 
 const URUTAN: { nilai: UrutTindak; label: string }[] = [
@@ -123,8 +124,7 @@ export function MejaPenanganan() {
                     aria-current={terpilih}
                     onClick={() => {
                       kirim({ t: "pilih", kls: b.i, lap: b.j, tab: "penanganan" });
-                      if (window.matchMedia("(max-width:900px)").matches)
-                        document.getElementById("periksa")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      if (window.matchMedia("(max-width:900px)").matches) gulirKe("periksa");
                     }}
                   >
                     <span className="tkiri">
