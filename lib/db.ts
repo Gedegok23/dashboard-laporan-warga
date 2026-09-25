@@ -317,6 +317,30 @@ const SQL_MEJA = `
    ORDER BY l.created_at DESC
 `;
 
+/**
+ * Penyamaran identitas pelapor.
+ *
+ * Panel identitas punya dua keadaan: disamarkan secara bawaan, dan terbuka
+ * dengan catatan di jejak audit. Dari database keduanya berisi hal yang sama
+ * persis, jadi nomor WhatsApp lengkap tampil tanpa pernah membuka apa pun dan
+ * jejak auditnya kehilangan arti. Data contoh sudah menyamarkan sejak awal;
+ * ini menyamakan jalur database dengannya.
+ */
+function samarkanNama(nama: string) {
+  const bagian = nama.trim().split(/\s+/).filter(Boolean);
+  if (!bagian.length) return "-";
+  // Nama satu kata tidak bisa dipersingkat lagi tanpa menghilangkannya sama sekali.
+  if (bagian.length === 1) return bagian[0];
+  return `${bagian[0]} ${bagian.slice(1).map((x) => `${x[0].toUpperCase()}.`).join(" ")}`;
+}
+
+/** Kode negara dan empat angka terakhir cukup untuk mencocokkan, tengahnya ditutup. */
+function samarkanWa(wa: string) {
+  const angka = wa.replace(/\D/g, "");
+  if (angka.length < 8) return "nomor disamarkan";
+  return `+${angka.slice(0, 2)} ${angka.slice(2, 5)}-••••-${angka.slice(-4)}`;
+}
+
 const dua = (n: number) => String(n).padStart(2, "0");
 /** YYMMDDHHMM dalam WIB, format urut yang dipakai seluruh aplikasi. */
 const keTs = (d: Date) => {
@@ -387,9 +411,9 @@ function keLaporanMeja(r: BarisMeja): Laporan {
       berkasId: r.foto_berkas_id,
     },
     pelapor: {
-      nama: namaPelapor,
+      nama: samarkanNama(namaPelapor),
       namaPenuh: r.pelapor_nama?.trim() ? `${r.pelapor_nama.trim()} (${pegangan})` : pegangan,
-      wa: waPelapor ? `+${waPelapor}` : "tidak diberikan",
+      wa: waPelapor ? samarkanWa(waPelapor) : "tidak diberikan",
       waPenuh: waPelapor ? `+${waPelapor}` : "pelapor tidak memberikan nomor",
     },
     riwayat,

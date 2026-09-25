@@ -264,8 +264,17 @@ export const penangananLaporan = (l: Laporan): Penanganan => l.penanganan ?? PEN
 export const statusTindak = (l: Laporan): StatusTindak =>
   l.tahap === 3 ? "selesai" : l.tahap === 2 ? "proses" : "belum";
 
-/** Laporan yang sudah menjadi pekerjaan instansi, jadi muncul di meja penanganan. */
-export const masukPenanganan = (l: Laporan) => !l.duplikat && l.tahap >= 1;
+/**
+ * Laporan yang muncul di meja penanganan.
+ *
+ * Sebelumnya syaratnya `tahap >= 1`, jadi laporan yang baru masuk tidak pernah
+ * terlihat di sini sampai ada yang meneruskannya. Akibatnya dua daftar di satu
+ * layar menunjukkan isi berbeda, dan saringan "Menunggu regu" ikut berbohong:
+ * yang paling menunggu justru yang belum terhitung.
+ *
+ * Duplikat tetap di luar, karena pekerjaannya diwakili laporan induknya.
+ */
+export const masukPenanganan = (l: Laporan) => !l.duplikat;
 
 export const cariPetugas = (id: string | null) =>
   PETUGAS_LAPANGAN.find((p) => p.id === id) ?? null;
@@ -369,6 +378,8 @@ export function barisPenanganan(
   kunci: string,
   urut: UrutTindak,
   arah: Arah,
+  /** Roster dari tabel. Tanpa ini kolom petugas membaca daftar data contoh. */
+  daftar: PetugasLapangan[] = PETUGAS_LAPANGAN,
 ): BarisTindak[] {
   const arahAngka = arah === "turun" ? -1 : 1;
   return semuaLapor(data)
@@ -379,7 +390,7 @@ export function barisPenanganan(
       i,
       j,
       status: statusTindak(l),
-      petugas: cariPetugas(penangananLaporan(l).petugas),
+      petugas: cariPetugasDi(daftar, penangananLaporan(l).petugas),
       mirip: saudaraKlaster(k, l).length,
       bukti: penangananLaporan(l).bukti.length,
     }))

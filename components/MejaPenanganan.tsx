@@ -27,9 +27,9 @@ export function TindakChip({ status }: { status: StatusTindak }) {
 }
 
 export function MejaPenanganan() {
-  const { s, kirim } = useMeja();
+  const { s, kirim, petugas: daftarPetugas } = useMeja();
   const h = hitungTindak(s.data);
-  const baris = barisPenanganan(s.data, s.tindak, s.kunci, s.urutTindak, s.arahTindak);
+  const baris = barisPenanganan(s.data, s.tindak, s.kunci, s.urutTindak, s.arahTindak, daftarPetugas);
 
   const opsi: { nilai: SaringTindak; nama: string; ikon: NamaIkon; jumlah: number }[] = [
     { nilai: "semua", nama: "Semua", ikon: "kerja", jumlah: h.total },
