@@ -189,10 +189,6 @@ export function PanelPeriksa() {
                 </option>
               ))}
             </select>
-            <span className={`auto${l.skor < k.ambang ? " rendah" : ""}`}>
-              <Ikon nama="kilau" ukuran={13} />
-              klasifikasi bot {l.skor.toFixed(2)} &middot; ambang {k.ambang.toFixed(2)}
-            </span>
           </dd>
 
           <dt>Lokasi</dt>

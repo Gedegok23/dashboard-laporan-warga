@@ -1161,10 +1161,6 @@ mark {
   font-family: var(--cond);
   font-weight: 600;
 }
-.auto.rendah {
-  background: var(--kritis-soft);
-  color: var(--kritis);
-}
 .taut {
   background: none;
   border: 0;
@@ -3668,4 +3664,55 @@ a.jchip {
   .peta-sebaran-bar {
     grid-column: 1 / -1;
   }
+}
+
+/* ---------- logo ----------
+
+   Lockup punya dua berkas karena wordmark-nya navy #152350: kontrasnya
+   15,13:1 di permukaan terang tapi 1,13:1 di permukaan gelap, jadi praktis
+   hilang. Mark-nya sendiri tidak perlu varian: biru #2b6fde 3,61:1 dan teal
+   #1d8c83 4,18:1 di permukaan gelap, keduanya lolos ambang 3:1 untuk grafik. */
+.stempel-logo {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  object-fit: contain;
+}
+
+.masuk-logo {
+  display: block;
+  margin-right: auto;
+  min-width: 0;
+}
+.masuk-logo img {
+  width: auto;
+  height: 42px;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+/* Pemilihan varian mengikuti pola tema yang sudah dipakai token warna:
+   media query untuk pilihan sistem, atribut untuk pilihan yang dipaksa. */
+.logo-gelap {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .logo-terang {
+    display: none;
+  }
+  :root:not([data-theme="light"]) .logo-gelap {
+    display: block;
+  }
+}
+:root[data-theme="dark"] .logo-terang {
+  display: none;
+}
+:root[data-theme="dark"] .logo-gelap {
+  display: block;
+}
+:root[data-theme="light"] .logo-terang {
+  display: block;
+}
+:root[data-theme="light"] .logo-gelap {
+  display: none;
 }

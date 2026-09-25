@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { PilihTema } from "@/components/PilihTema";
 import { BOT_TELEGRAM, KOTA, PEMERINTAH } from "@/lib/kota";
@@ -33,9 +34,15 @@ export default async function TataLetakPortal({ children }: LayoutProps<"/portal
       <header className="pkop">
         <div className="pkop-isi">
           <Link href="/portal" className="brand">
-            <div className="stempel" aria-hidden>
-              {MEREK.monogram}
-            </div>
+            <Image
+              className="stempel-logo"
+              src="/kito-mark.png"
+              alt=""
+              aria-hidden
+              width={395}
+              height={395}
+              priority
+            />
             <div>
               <p className="pnama">{MEREK.nama}</p>
               <p className="sub">{MEREK.semboyan}</p>

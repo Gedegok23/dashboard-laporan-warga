@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Ikon } from "@/components/Ikon";
@@ -22,13 +23,29 @@ export default async function Masuk({ searchParams }: PageProps<"/masuk">) {
     <main className="masuk">
       <div className="masuk-kartu">
         <div className="masuk-kop">
-          <div className="stempel" aria-hidden>
-            {MEREK.monogram}
-          </div>
-          <div>
-            <p className="masuk-merek">{MEREK.nama}</p>
-            <p className="masuk-semboyan">{MEREK.semboyan}</p>
-          </div>
+          {/* Lockup sudah memuat nama dan semboyan, jadi keduanya tidak ditulis
+              ulang sebagai teks. Nama lengkapnya tetap ada di alt untuk
+              pembaca layar. Dua berkas karena wordmark-nya navy: di permukaan
+              gelap kontrasnya 1,13:1, praktis hilang. */}
+          <Link href="/portal" className="masuk-logo" aria-label={`${MEREK.nama}, ${MEREK.panjang}`}>
+            <Image
+              className="logo-terang"
+              src="/kito-lockup.png"
+              alt={`${MEREK.nama}. ${MEREK.semboyan}`}
+              width={1100}
+              height={440}
+              priority
+            />
+            <Image
+              className="logo-gelap"
+              src="/kito-lockup-gelap.png"
+              alt=""
+              aria-hidden
+              width={1100}
+              height={440}
+              priority
+            />
+          </Link>
           <PilihTema />
         </div>
 

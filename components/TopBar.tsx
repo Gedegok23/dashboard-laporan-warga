@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Ikon } from "./Ikon";
@@ -29,9 +30,15 @@ export function TopBar() {
   return (
     <header className="topbar">
       <div className="brand">
-        <div className="stempel" aria-hidden>
-          {MEREK.monogram}
-        </div>
+        <Image
+          className="stempel-logo"
+          src="/kito-mark.png"
+          alt=""
+          aria-hidden
+          width={395}
+          height={395}
+          priority
+        />
         <div>
           <h1>{MEREK.nama}</h1>
           <p className="sub">
