@@ -15,6 +15,7 @@ import {
   tahapKlaster,
   terbaruKlaster,
 } from "@/lib/logika";
+import { gulirKe } from "@/lib/gerak";
 import type { Urut } from "@/lib/tipe";
 
 const KOLOM: { urut: Urut; label: string }[] = [
@@ -143,8 +144,7 @@ export function DaftarKlaster() {
                       aria-current={i === s.kls && j === s.lap}
                       onClick={() => {
                         kirim({ t: "pilih", kls: i, lap: j });
-                        if (window.matchMedia("(max-width:900px)").matches)
-                          document.getElementById("periksa")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        if (window.matchMedia("(max-width:900px)").matches) gulirKe("periksa");
                       }}
                     >
                       <span>

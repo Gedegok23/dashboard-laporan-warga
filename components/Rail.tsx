@@ -4,6 +4,7 @@ import { Ikon } from "./Ikon";
 import { useMeja } from "./MejaProvider";
 import { INSTANSI, TINDAK } from "@/lib/data";
 import { bebanInstansi, bebanPetugas, hitungRingkas, hitungTindak } from "@/lib/logika";
+import { gulirKe } from "@/lib/gerak";
 import type { NamaIkon, Saring, SaringTindak } from "@/lib/tipe";
 
 const PENANGANAN: { nilai: SaringTindak; label: string; ikon: NamaIkon; tanda?: boolean }[] = [
@@ -20,8 +21,7 @@ const ANTREAN: { nilai: Saring; label: string; ikon: NamaIkon; tanda?: boolean }
   { nilai: "dup", label: "Ditandai duplikat", ikon: "salin" },
 ];
 
-const lompat = (id: string) =>
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+const lompat = (id: string) => gulirKe(id);
 
 export function Rail() {
   const { s, kirim } = useMeja();

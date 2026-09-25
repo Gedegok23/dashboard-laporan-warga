@@ -2,6 +2,7 @@
 
 import { MapContainer, CircleMarker, Popup, TileLayer } from "react-leaflet";
 import Link from "next/link";
+import { kurangiGerak } from "@/lib/gerak";
 import { JENIS } from "@/lib/kategori";
 import type { LaporanPortal } from "@/lib/tipe";
 import "leaflet/dist/leaflet.css";
@@ -28,8 +29,21 @@ const WARNA: Record<string, string> = {
 };
 
 export function PetaLaporan({ daftar }: { daftar: LaporanPortal[] }) {
+  // Leaflet menganimasikan zoom, geser, dan munculnya ubin sendiri; CSS
+  // prefers-reduced-motion tidak menjangkaunya. Komponen ini hanya dirender di
+  // peramban (lihat PetaKlien), jadi membaca preferensi di sini aman.
+  const diam = kurangiGerak();
+
   return (
-    <MapContainer center={pusatDari(daftar)} zoom={12} scrollWheelZoom className="peta">
+    <MapContainer
+      center={pusatDari(daftar)}
+      zoom={12}
+      scrollWheelZoom
+      className="peta"
+      zoomAnimation={!diam}
+      fadeAnimation={!diam}
+      markerZoomAnimation={!diam}
+    >
       <TileLayer
         attribution='&copy; kontributor <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"

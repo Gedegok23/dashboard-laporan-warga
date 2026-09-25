@@ -15,6 +15,16 @@ const PILIHAN: { nilai: Tema; label: string; ikon: NamaIkon }[] = [
 /** Tanpa atribut, CSS mengikuti prefers-color-scheme. Dengan atribut, dipaksa. */
 function terapkan(t: Tema) {
   const akar = document.documentElement;
+
+  // Kartu dan teksnya punya transisi warna 0,18 detik. Tanpa penanda ini,
+  // mengganti tema membuat seluruh halaman luntur pelan-pelan alih-alih
+  // berganti seketika. Dilepas setelah dua frame: satu untuk memasang gaya
+  // baru, satu lagi untuk memastikan peramban sudah menggambarnya.
+  akar.setAttribute("data-ganti-tema", "");
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => akar.removeAttribute("data-ganti-tema")),
+  );
+
   if (t === "sistem") akar.removeAttribute("data-theme");
   else akar.setAttribute("data-theme", t === "gelap" ? "dark" : "light");
   try {
