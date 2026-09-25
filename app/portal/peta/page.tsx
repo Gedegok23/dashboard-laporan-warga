@@ -13,8 +13,87 @@ export const metadata: Metadata = {
 export const revalidate = 0;
 
 export default async function HalamanPeta() {
-  const daftar = (await semuaLaporanPortal()).filter((l) => l.titik[0] !== 0);
+  const semua = await semuaLaporanPortal();
+  const daftar = semua.filter((l) => l.titik[0] !== 0);
   const jenisAda = URUT_JENIS.filter((j) => daftar.some((l) => l.jenis === j));
+
+  // Tidak ada satu pun titik. Peta kosong tanpa penjelasan terlihat seperti
+  // halaman rusak, padahal sebabnya sederhana dan disengaja: koordinat hanya
+  // datang dari titik yang dibagikan warga sendiri lewat Telegram. Menebaknya
+  // dari teks alamat akan menaruh laporan di tempat yang salah. Selama belum
+  // ada titik, sebarannya tetap bisa dibaca per jenis dan per kelurahan.
+  if (!daftar.length) {
+    const perJenis = URUT_JENIS.map((j) => ({
+      jenis: j,
+      n: semua.filter((l) => l.jenis === j).length,
+    })).filter((x) => x.n > 0);
+    const puncak = Math.max(1, ...perJenis.map((x) => x.n));
+
+    const perWilayah = [
+      ...semua
+        .filter((l) => l.kelurahan && l.kelurahan !== "-")
+        .reduce((m, l) => m.set(l.kelurahan, (m.get(l.kelurahan) ?? 0) + 1), new Map<string, number>())
+        .entries(),
+    ].sort((a, b) => b[1] - a[1]);
+
+    return (
+      <div className="pmain">
+        <section className="phalaman">
+          <h2>Peta Laporan</h2>
+          <p className="plead">
+            Belum ada laporan yang membawa titik lokasi, jadi belum ada yang bisa digambar di peta.
+          </p>
+        </section>
+
+        <section className="peta-kosong">
+          <p>
+            Titik hanya diambil dari lokasi yang dibagikan warga sendiri lewat lampiran Telegram.
+            Alamat yang ditulis sebagai teks tidak diterjemahkan jadi koordinat, karena menebak
+            titik dari nama jalan akan menaruh laporan di tempat yang salah.
+          </p>
+          <p>Sementara itu, sebarannya bisa dibaca dari angka di bawah.</p>
+        </section>
+
+        <section className="phalaman">
+          <h3>Sebaran menurut jenis masalah</h3>
+          <ul className="peta-sebaran">
+            {perJenis.map((x) => (
+              <li key={x.jenis} className={`j-${x.jenis}`}>
+                <span className="peta-sebaran-nama">
+                  <Ikon nama={JENIS[x.jenis].ikon} ukuran={15} />
+                  {JENIS[x.jenis].label}
+                </span>
+                <span className="peta-sebaran-bar" aria-hidden>
+                  <span style={{ width: `${Math.round((x.n / puncak) * 100)}%` }} />
+                </span>
+                <span className="peta-sebaran-n">{x.n}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {perWilayah.length ? (
+          <section className="phalaman">
+            <h3>Kelurahan yang sudah tercatat</h3>
+            <ul className="peta-wilayah">
+              {perWilayah.map(([nama, n]) => (
+                <li key={nama}>
+                  <span>{nama}</span>
+                  <span className="mono">{n}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <p className="pcatatan">
+          <Ikon nama="perisai" ukuran={14} />
+          Peta ini tidak memuat identitas pelapor. Warna hanya menandai jenis masalah, bukan status
+          penanganannya.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="pmain">
