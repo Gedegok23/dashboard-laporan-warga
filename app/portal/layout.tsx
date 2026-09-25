@@ -14,7 +14,6 @@ export const metadata: Metadata = {
 const TAUTAN = [
   { href: "/portal", label: "Beranda" },
   { href: "/portal/laporan", label: "Daftar Laporan" },
-  { href: "/portal/peta", label: "Peta" },
   { href: "/portal/scorecard", label: "Scorecard" },
   { href: "/portal/tren", label: "Tren & Statistik" },
   { href: "/portal/cek-status", label: "Cek Status" },
