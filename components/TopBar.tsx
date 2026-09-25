@@ -70,6 +70,10 @@ export function TopBar() {
       </div>
 
       <div className="topmeta">
+        <Link className="taut-portal" href="/petugas">
+          <Ikon nama="regu" ukuran={15} />
+          Regu lapangan
+        </Link>
         <Link className="taut-portal" href="/portal">
           <Ikon nama="portal" ukuran={15} />
           Portal warga

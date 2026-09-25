@@ -21,7 +21,7 @@ export default async function Petugas(props: PageProps<"/petugas">) {
   const { ubah } = await props.searchParams;
   if (!pakaiDatabase()) {
     return (
-      <main className="pmain sempit">
+      <main className="pmain petugas">
         <h1>Regu lapangan</h1>
         <p>Halaman ini butuh sambungan database. Setel `MEJA_DATABASE_URL` lebih dulu.</p>
       </main>
@@ -32,7 +32,7 @@ export default async function Petugas(props: PageProps<"/petugas">) {
   const diubah = petugas.find((p) => String(p.id) === String(ubah)) ?? null;
 
   return (
-    <main className="pmain sempit petugas">
+    <main className="pmain petugas">
       <Link className="kembali" href="/">
         <Ikon nama="mundur" ukuran={15} /> Kembali ke meja
       </Link>

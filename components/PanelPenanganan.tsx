@@ -169,7 +169,8 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
         <p className="label">Penanda tindakan</p>
         <div className="segmen" role="group" aria-label="Penanda tindakan laporan">
           {LANGKAH.map((x) => {
-            const terkunci = x === "selesai" && !siapDitutup;
+            // Sudah selesai berarti selesai: warga sudah menerima kabarnya.
+            const terkunci = (x === "selesai" && !siapDitutup) || (status === "selesai" && x !== "selesai");
             return (
               <button
                 key={x}
@@ -184,7 +185,13 @@ export function PanelPenanganan({ k, l }: { k: Klaster; l: Laporan }) {
             );
           })}
         </div>
-        {siapDitutup ? null : (
+        {status === "selesai" ? (
+          <p className="bantu">
+            Laporan sudah ditutup dan pelapor sudah dikabari, jadi penandanya tidak bisa dimundurkan
+            lagi. Bila masalahnya muncul kembali di titik yang sama, catat sebagai laporan baru.
+          </p>
+        ) : null}
+        {siapDitutup || status === "selesai" ? null : (
           <p className="bantu">
             Laporan belum bisa ditandai sudah ditindak. RDB menyimpan bukti dokumentasi sebagai tanda
             penyelesaian, jadi perlu minimal {BUKTI_MINIMAL} berkas dari lapangan.
