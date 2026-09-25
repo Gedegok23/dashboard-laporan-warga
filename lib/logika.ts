@@ -1,4 +1,5 @@
 import { BATAS_HARI_KERJA, BUKTI_MINIMAL, PETUGAS_LAPANGAN, TAHAP, TINDAK } from "./data";
+import { BULAN } from "./waktu";
 import type {
   Arah,
   BarisLog,
@@ -34,9 +35,15 @@ export const terbaruKlaster = (k: Klaster) =>
   k.lapor.length ? Math.max(...k.lapor.map((l) => l.ts)) : 0;
 
 /** YYMMDDHHMM menjadi "16 Sep 14:02". */
+/**
+ * Kunci YYMMDDHHMM jadi "5 Okt 14:06". Bulannya dibaca dari kuncinya; sebelum
+ * ini teksnya dipaku "Sep", jadi tiap laporan tampil seolah dibuat bulan
+ * September berapa pun bulan sebenarnya.
+ */
 export function fmtTs(ts: number) {
-  const s = String(ts);
-  return `${s.slice(4, 6).replace(/^0/, "")} Sep ${s.slice(6, 8)}:${s.slice(8, 10)}`;
+  const s = String(ts).padStart(10, "0");
+  const bulan = BULAN[Number(s.slice(2, 4)) - 1] ?? "";
+  return `${s.slice(4, 6).replace(/^0/, "")} ${bulan} ${s.slice(6, 8)}:${s.slice(8, 10)}`;
 }
 
 export const instansiLaporan = (l: Laporan, k: Klaster) => l.instansi || k.instansi;

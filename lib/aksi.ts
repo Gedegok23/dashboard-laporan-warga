@@ -5,6 +5,7 @@ import { cookies, headers } from "next/headers";
 import { kolam, tahapDari } from "./db";
 import { BUCKET, adaSimpanan, unggahGambar } from "./simpanan";
 import { NAMA_COOKIE, bacaSesi } from "./sesi";
+import { bagianWib } from "./waktu";
 import { HARI_BERLAKU, sidik, tokenBaru } from "./tautan";
 import type { StatusTindak } from "./tipe";
 
@@ -204,8 +205,10 @@ export async function buktiTambahAksi(tiket: string, berkas?: FormData) {
       nama = (isi as File).name;
     } else {
       // Tanpa penyimpanan objek, bukti hanya tercatat sebagai keterangan.
-      const d = new Date();
-      const cap = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}`;
+      // Nama berkas dibaca manusia, jadi jamnya WIB seperti yang tampil di layar.
+      const b = bagianWib(new Date());
+      const dd = (n: number) => String(n).padStart(2, "0");
+      const cap = `${b.tahun}${dd(b.bulan)}${dd(b.tanggal)}-${dd(b.jam)}${dd(b.menit)}`;
       nama = `IMG-${cap}-lapangan.jpg`;
     }
 

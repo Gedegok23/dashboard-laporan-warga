@@ -1,5 +1,15 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
+
 import type { Jenis, KelompokPortal, LaporanPortal, StatusPortal, Tonggak } from "./tipe";
+import { BULAN, awalHariWib, bagianWib } from "./waktu";
+
+/**
+ * Kolom waktu bertipe `timestamp without time zone` dan berisi UTC. Tanpa
+ * penanda zona, driver menafsirkannya memakai zona proses, jadi nilainya ikut
+ * bergeser kalau setelan mesin berubah. Penafsirannya dipaku di sini supaya
+ * instan yang dibaca selalu sama, lalu penyajiannya diubah ke WIB di bawah.
+ */
+types.setTypeParser(1114, (v) => new Date(`${v.replace(" ", "T")}Z`));
 
 /**
  * Satu pool per proses. Next.js memuat ulang modul saat dev, jadi pool
@@ -101,14 +111,26 @@ const SQL = `
    ORDER BY l.created_at DESC
 `;
 
-const BULAN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-const tgl = (d: Date) => `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`;
-const jam = (d: Date) =>
-  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-const pendek = (d: Date) => `${d.getDate()} ${BULAN[d.getMonth()]} ${jam(d)}`;
+const tgl = (d: Date) => {
+  const b = bagianWib(d);
+  return `${b.tanggal} ${BULAN[b.bulan - 1]} ${b.tahun}`;
+};
+const jam = (d: Date) => {
+  const b = bagianWib(d);
+  return `${String(b.jam).padStart(2, "0")}:${String(b.menit).padStart(2, "0")}`;
+};
+const pendek = (d: Date) => {
+  const b = bagianWib(d);
+  return `${b.tanggal} ${BULAN[b.bulan - 1]} ${jam(d)}`;
+};
 
+/**
+ * "hari ini" dan "kemarin" dihitung dari pergantian hari di WIB, bukan dari
+ * selisih 24 jam. Laporan pukul 23.00 tetap "kemarin" pada pukul 01.00, bukan
+ * "hari ini" karena belum genap sehari.
+ */
 function lalu(d: Date, kini = Date.now()) {
-  const hari = Math.floor((kini - d.getTime()) / 86_400_000);
+  const hari = Math.round((awalHariWib(new Date(kini)) - awalHariWib(d)) / 86_400_000);
   if (hari <= 0) return "hari ini";
   if (hari === 1) return "kemarin";
   if (hari < 7) return `${hari} hari lalu`;
@@ -296,9 +318,11 @@ const SQL_MEJA = `
 `;
 
 const dua = (n: number) => String(n).padStart(2, "0");
-/** YYMMDDHHMM, format urut yang dipakai seluruh aplikasi. */
-const keTs = (d: Date) =>
-  Number(`${dua(d.getFullYear() % 100)}${dua(d.getMonth() + 1)}${dua(d.getDate())}${dua(d.getHours())}${dua(d.getMinutes())}`);
+/** YYMMDDHHMM dalam WIB, format urut yang dipakai seluruh aplikasi. */
+const keTs = (d: Date) => {
+  const b = bagianWib(d);
+  return Number(`${dua(b.tahun % 100)}${dua(b.bulan)}${dua(b.tanggal)}${dua(b.jam)}${dua(b.menit)}`);
+};
 
 /** Sisa hari kerja sebelum batas tindak lanjut instansi. Null bila sudah selesai. */
 function sisaHari(dibuat: Date, sla: number | null, tahap: number) {

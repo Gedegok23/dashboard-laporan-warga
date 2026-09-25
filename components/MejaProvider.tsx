@@ -12,6 +12,7 @@ import {
 } from "react";
 import type { Dispatch, ReactNode } from "react";
 import { PETUGAS_LAPANGAN } from "@/lib/data";
+import { bagianWib } from "@/lib/waktu";
 import { keadaanAwal, reducer } from "@/lib/reducer";
 import type { Aksi, Keadaan } from "@/lib/reducer";
 import type { Klaster, PetugasLapangan } from "@/lib/tipe";
@@ -31,8 +32,12 @@ import {
 } from "@/lib/aksi";
 
 /** Jam meja saat halaman dibuka. Tetap agar render server dan klien sama. */
-const JAM_MULAI = "14:06";
-const MENIT_MULAI = 14 * 60 + 6;
+/**
+ * Sebelum klien hidup, server tidak boleh menebak jam: ia berjalan di UTC dan
+ * tulisannya akan berbeda dari yang digambar peramban. Tanda ini yang tampil
+ * sampai effect pertama mengisinya dengan jam sungguhan.
+ */
+const JAM_MULAI = "--:--";
 
 type Isi = {
   s: Keadaan;
@@ -54,8 +59,6 @@ type Isi = {
 
 const Konteks = createContext<Isi | null>(null);
 
-const formatJam = (menit: number) =>
-  `${String(Math.floor(menit / 60) % 24).padStart(2, "0")}:${String(menit % 60).padStart(2, "0")}`;
 
 export function MejaProvider({
   children,
@@ -88,9 +91,12 @@ export function MejaProvider({
   const antre = useRef<{ a: Aksi; sebelum: Keadaan }[]>([]);
   const tundaCatatan = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Jam nyata, dibaca di WIB. Sebelumnya angkanya dikarang: mulai dari 14:06
+  // lalu menghitung naik dari saat halaman dibuka, jadi tiap stempel aksi dan
+  // label sinkron menunjukkan waktu yang tidak pernah terjadi.
   const jamKini = useCallback(() => {
-    const lewat = mulai.current ? Math.floor((Date.now() - mulai.current) / 60_000) : 0;
-    return formatJam(MENIT_MULAI + lewat);
+    const b = bagianWib(new Date());
+    return `${String(b.jam).padStart(2, "0")}:${String(b.menit).padStart(2, "0")}`;
   }, []);
 
 
