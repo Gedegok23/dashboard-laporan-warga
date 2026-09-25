@@ -254,6 +254,17 @@ export const masukPenanganan = (l: Laporan) => !l.duplikat && l.tahap >= 1;
 export const cariPetugas = (id: string | null) =>
   PETUGAS_LAPANGAN.find((p) => p.id === id) ?? null;
 
+/** Versi yang memakai daftar dari database; konstanta hanya untuk mode data contoh. */
+export const cariPetugasDi = (daftar: PetugasLapangan[], id: string | null) =>
+  daftar.find((p) => p.id === id) ?? null;
+
+export function petugasUntukDi(daftar: PetugasLapangan[], instansi: string) {
+  return {
+    cocok: daftar.filter((p) => p.instansi === instansi),
+    lain: daftar.filter((p) => p.instansi !== instansi),
+  };
+}
+
 /** Regu yang unitnya cocok didahulukan, regu lain tetap bisa dipinjam. */
 export function petugasUntuk(instansi: string) {
   return {

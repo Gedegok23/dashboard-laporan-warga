@@ -237,6 +237,81 @@ export async function buktiTambahAksi(tiket: string, berkas?: FormData) {
   segarkan();
 }
 
+/** Nomor WA disimpan seragam (62xxx) supaya bisa langsung dipakai mengirim tautan. */
+function rapikanWa(mentah: FormDataEntryValue | null) {
+  const angka = String(mentah ?? "").replace(/[^0-9+]/g, "").replace(/^\+/, "");
+  if (!angka) return null;
+  const nomor = angka.startsWith("0") ? `62${angka.slice(1)}` : angka;
+  return /^62[0-9]{8,13}$/.test(nomor) ? nomor : null;
+}
+
+function teks(muatan: FormData, kunci: string, maks: number) {
+  return String(muatan.get(kunci) ?? "").trim().slice(0, maks);
+}
+
+/**
+ * Tambah atau ubah satu regu lapangan.
+ *
+ * Satu fungsi untuk keduanya: bedanya cuma ada tidaknya `id`. Kode regu
+ * dipakai penugasan sebagai kunci, jadi bentuknya dibatasi dan keunikannya
+ * dijaga database, bukan hanya oleh formulir.
+ */
+export async function petugasSimpanAksi(muatan: FormData) {
+  const id = Number(muatan.get("id") ?? 0);
+  const kode = teks(muatan, "kode", 20).toUpperCase();
+  const nama = teks(muatan, "nama", 150);
+  const regu = teks(muatan, "regu", 150);
+  const instansi = Number(muatan.get("instansi_id") ?? 0) || null;
+  const wa = rapikanWa(muatan.get("wa"));
+  const aktif = muatan.get("aktif") !== null;
+
+  if (!/^[A-Z0-9-]{3,20}$/.test(kode)) throw new Error("kode regu hanya huruf, angka, dan tanda hubung");
+  if (!nama) throw new Error("nama petugas wajib diisi");
+  if (!regu) throw new Error("nama regu wajib diisi");
+  if (muatan.get("wa") && !wa) throw new Error("nomor WA tidak dikenali, contoh 0812xxxxxxx");
+
+  await transaksi(async (c) => {
+    if (id) {
+      await c.query(
+        "UPDATE petugas_lapangan SET kode=$2, nama=$3, regu=$4, instansi_id=$5, wa=$6, aktif=$7 WHERE id=$1",
+        [id, kode, nama, regu, instansi, wa, aktif],
+      );
+    } else {
+      await c.query(
+        "INSERT INTO petugas_lapangan (kode, nama, regu, instansi_id, wa, aktif) VALUES ($1,$2,$3,$4,$5,$6)",
+        [kode, nama, regu, instansi, wa, aktif],
+      );
+    }
+  });
+  segarkan();
+  revalidatePath("/petugas");
+}
+
+/**
+ * Keluarkan regu dari daftar.
+ *
+ * Regu yang pernah memegang laporan tidak dihapus, hanya dinonaktifkan:
+ * menghapusnya akan memutus jejak siapa yang mengerjakan laporan lama, dan
+ * bukti dokumentasi ikut kehilangan pemiliknya.
+ */
+export async function petugasHapusAksi(muatan: FormData) {
+  const id = Number(muatan.get("id") ?? 0);
+  if (!id) return;
+  await transaksi(async (c) => {
+    const dipakai = Number(
+      (await c.query<{ n: string }>("SELECT count(*) n FROM penanganan WHERE petugas_id = $1", [id]))
+        .rows[0].n,
+    );
+    if (dipakai > 0) {
+      await c.query("UPDATE petugas_lapangan SET aktif = false WHERE id = $1", [id]);
+      return;
+    }
+    await c.query("DELETE FROM petugas_lapangan WHERE id = $1", [id]);
+  });
+  segarkan();
+  revalidatePath("/petugas");
+}
+
 /**
  * Terbitkan tautan unggah untuk petugas yang sedang ditugaskan.
  *

@@ -8,15 +8,26 @@ import { Ringkas } from "@/components/Ringkas";
 import { Saringan } from "@/components/Saringan";
 import { Toast } from "@/components/Toast";
 import { TopBar } from "@/components/TopBar";
+import { daftarPetugas } from "@/lib/petugas";
 import { isiMeja } from "@/lib/sumber";
 
 export const revalidate = 0;
 
 export default async function Halaman() {
-  const { data, langsung } = await isiMeja();
+  const [{ data, langsung }, regu] = await Promise.all([isiMeja(), daftarPetugas()]);
+  // Bentuk yang dipakai panel: kode regu jadi id, nomor WA ditulis siap kirim.
+  const petugas = regu
+    .filter((p) => p.aktif)
+    .map((p) => ({
+      id: p.kode,
+      nama: p.nama,
+      regu: p.regu,
+      instansi: p.instansi ?? "",
+      wa: p.wa ? `+${p.wa}` : "",
+    }));
 
   return (
-    <MejaProvider data={data} langsung={langsung}>
+    <MejaProvider data={data} langsung={langsung} petugas={petugas}>
       <a className="skip" href="#penanganan">
         Lewati ke penanganan laporan
       </a>
