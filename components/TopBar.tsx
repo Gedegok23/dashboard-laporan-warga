@@ -4,13 +4,12 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Ikon } from "./Ikon";
 import { useMeja } from "./MejaProvider";
-import { petugas } from "@/lib/data";
 import { PilihTema } from "./PilihTema";
 import { KANAL, PEMERINTAH } from "@/lib/kota";
 import { MEREK } from "@/lib/merek";
 
 export function TopBar() {
-  const { s, kirim, jamTampil } = useMeja();
+  const { s, kirim, jamTampil, akun } = useMeja();
   const kotak = useRef<HTMLInputElement>(null);
 
   // Garis miring melompat ke pencarian, Escape melepas fokus.
@@ -83,11 +82,11 @@ export function TopBar() {
         <span className="mono">Sinkron RDB {jamTampil}</span>
         <span className="petugas">
           <span className="av" aria-hidden>
-            {petugas.inisial}
+            {akun.slice(0, 2).toUpperCase()}
           </span>
           <span>
-            <b>{petugas.nama}</b>
-            <span style={{ fontSize: 11 }}>Verifikator Diskominfo</span>
+            <b>{akun}</b>
+            <span style={{ fontSize: 11 }}>{PEMERINTAH}</span>
           </span>
         </span>
       </div>

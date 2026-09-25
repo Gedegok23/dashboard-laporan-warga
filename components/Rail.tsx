@@ -2,7 +2,7 @@
 
 import { Ikon } from "./Ikon";
 import { useMeja } from "./MejaProvider";
-import { INSTANSI, TINDAK } from "@/lib/data";
+import { TINDAK } from "@/lib/data";
 import { bebanInstansi, bebanPetugas, hitungRingkas, hitungTindak } from "@/lib/logika";
 import { gulirKe } from "@/lib/gerak";
 import type { NamaIkon, Saring, SaringTindak } from "@/lib/tipe";
@@ -28,7 +28,7 @@ export function Rail() {
   const h = hitungRingkas(s.data);
   const t = hitungTindak(s.data);
   const regu = bebanPetugas(s.data);
-  const beban = bebanInstansi(s.data, INSTANSI);
+  const beban = bebanInstansi(s.data);
 
   const jumlahTindak: Record<string, number> = {
     semua: t.total,

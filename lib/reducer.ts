@@ -1,4 +1,4 @@
-import { LANJUT, TAHAP, TINDAK, dataAwal, petugas } from "./data";
+import { LANJUT, TAHAP, TINDAK, dataAwal } from "./data";
 import {
   cariPetugas,
   cukupBukti,
@@ -119,7 +119,12 @@ function catat(l: Laporan, judul: string, ket: string, jam: string) {
       peran: "petugas",
       ikon: "petugas",
       jam,
-      teks: `${ket} oleh ${petugas.nama} (${petugas.unit}).`,
+      // Baris ini optimistis: ia muncul sebelum server menjawab, lalu diganti
+      // oleh status_log yang memuat pelaku sebenarnya. Dulu ia menempelkan nama
+      // petugas karangan dari data contoh, yang berarti log mengaku tahu siapa
+      // yang menekan tombol padahal tidak. Kolom "siapa" sudah menandainya
+      // sebagai tindakan petugas; namanya datang dari server.
+      teks: `${ket}.`,
     },
   ];
 }

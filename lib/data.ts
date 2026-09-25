@@ -7,12 +7,6 @@ import type {
 } from "./tipe";
 
 /** Petugas yang sedang masuk. Dipakai untuk jejak audit dan baris log. */
-export const petugas = {
-  nama: "Arif Setiawan",
-  unit: "Diskominfo Kota Bandung",
-  inisial: "AS",
-};
-
 export const TAHAP: { nama: string; ikon: NamaIkon }[] = [
   { nama: "Perlu verifikasi", ikon: "lingkaran" },
   { nama: "Diteruskan", ikon: "teruskan" },
@@ -40,15 +34,6 @@ export const LANJUT: { ke: Tahap; label: string; ikon: NamaIkon; catatan: string
     ikon: "selesai",
     catatan: "Penanganan dinyatakan selesai oleh petugas",
   },
-];
-
-export const INSTANSI = [
-  "Dinas Bina Marga dan Penataan Ruang",
-  "Dinas Lingkungan Hidup dan Kebersihan",
-  "Dinas Perhubungan",
-  "Dinas Pekerjaan Umum",
-  "DPKP3",
-  "Satuan Polisi Pamong Praja",
 ];
 
 /**

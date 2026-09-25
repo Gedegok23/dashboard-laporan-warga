@@ -8,14 +8,28 @@ import { Ringkas } from "@/components/Ringkas";
 import { Saringan } from "@/components/Saringan";
 import { Toast } from "@/components/Toast";
 import { TopBar } from "@/components/TopBar";
-import { daftarPetugas } from "@/lib/petugas";
+import { headers } from "next/headers";
+
+import { daftarInstansi, daftarPetugas } from "@/lib/petugas";
 import { isiMeja } from "@/lib/sumber";
 
 export const revalidate = 0;
 
 export default async function Halaman() {
-  const [{ data, langsung }, regu] = await Promise.all([isiMeja(), daftarPetugas()]);
-  // Bentuk yang dipakai panel: kode regu jadi id, nomor WA ditulis siap kirim.
+  const [{ data, langsung }, regu, instansi, kepala] = await Promise.all([
+    isiMeja(),
+    daftarPetugas(),
+    daftarInstansi(),
+    headers(),
+  ]);
+
+  // Disetel proxy setelah kredensial cocok. Tanpa proxy (pengembangan lokal)
+  // tidak ada akun yang masuk, jadi kop menyebut perannya, bukan nama orang.
+  const akun = kepala.get("x-meja-akun")?.trim() || "Petugas instansi";
+
+  // Bentuk yang dipakai panel: kode regu jadi id, nomor WA apa adanya dari
+  // tabel. Nomor di tabel sudah memuat tanda tambah; menambahkannya lagi
+  // membuat "++62" tampil di daftar regu.
   const petugas = regu
     .filter((p) => p.aktif)
     .map((p) => ({
@@ -23,11 +37,17 @@ export default async function Halaman() {
       nama: p.nama,
       regu: p.regu,
       instansi: p.instansi ?? "",
-      wa: p.wa ? `+${p.wa}` : "",
+      wa: p.wa?.trim() ?? "",
     }));
 
   return (
-    <MejaProvider data={data} langsung={langsung} petugas={petugas}>
+    <MejaProvider
+      data={data}
+      langsung={langsung}
+      petugas={petugas}
+      akun={akun}
+      instansi={instansi.map((i) => i.nama)}
+    >
       <a className="skip" href="#penanganan">
         Lewati ke penanganan laporan
       </a>

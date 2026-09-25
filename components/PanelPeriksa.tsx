@@ -6,7 +6,7 @@ import { DupChip, SlaChip, TahapChip } from "./Lencana";
 import { useMeja } from "./MejaProvider";
 import { PanelPenanganan } from "./PanelPenanganan";
 import { Sorot } from "./Sorot";
-import { BATAS_HARI_KERJA, INSTANSI, LANJUT, TAHAP, petugas } from "@/lib/data";
+import { BATAS_HARI_KERJA, LANJUT, TAHAP } from "@/lib/data";
 import {
   cariPetugasDi,
   cukupBukti,
@@ -17,7 +17,7 @@ import {
 } from "@/lib/logika";
 
 export function PanelPeriksa() {
-  const { s, kirim, jamKini, petugas: daftarPetugas } = useMeja();
+  const { s, kirim, jamKini, petugas: daftarPetugas, akun, instansi } = useMeja();
   const [disalin, setDisalin] = useState(false);
 
   const k = s.data[s.kls];
@@ -222,7 +222,7 @@ export function PanelPeriksa() {
               value={instansiLaporan(l, k)}
               onChange={(e) => kirim({ t: "instansi", nama: e.target.value, jam: jamKini() })}
             >
-              {INSTANSI.map((n) => (
+              {instansi.map((n) => (
                 <option key={n}>{n}</option>
               ))}
             </select>
@@ -281,7 +281,7 @@ export function PanelPeriksa() {
           <p className="jejak">
             <Ikon nama="perisai" ukuran={14} />
             {s.identitas
-              ? `Akses identitas tercatat di jejak audit atas nama ${petugas.nama}, ${petugas.unit}.`
+              ? `Akses identitas tercatat di jejak audit atas nama akun ${akun}.`
               : "Identitas disamarkan secara bawaan. Membukanya akan tercatat di jejak audit."}
           </p>
         </div>

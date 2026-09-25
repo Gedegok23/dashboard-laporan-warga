@@ -11,21 +11,25 @@ import { MEREK } from "@/lib/merek";
  * Gagal tertutup: bila kredensial belum disetel, dashboard ditolak sama sekali,
  * bukan dibiarkan terbuka.
  */
-function sah(header: string | null) {
+/** Nama akun bila kredensialnya cocok, null bila tidak. */
+function akunSah(header: string | null) {
   const user = process.env.MEJA_ADMIN_USER;
   const pass = process.env.MEJA_ADMIN_PASS;
-  if (!user || !pass) return false;
-  if (!header?.startsWith("Basic ")) return false;
+  if (!user || !pass) return null;
+  if (!header?.startsWith("Basic ")) return null;
   let isi: string;
   try {
     isi = atob(header.slice(6));
   } catch {
-    return false;
+    return null;
   }
   const pisah = isi.indexOf(":");
-  if (pisah < 0) return false;
-  // Perbandingan panjang tetap supaya waktu jawab tidak membocorkan kredensial.
-  return aman(isi.slice(0, pisah), user) && aman(isi.slice(pisah + 1), pass);
+  if (pisah < 0) return null;
+  // Keduanya selalu dibandingkan, dan dengan panjang tetap, supaya waktu jawab
+  // tidak membocorkan kredensial.
+  const namaCocok = aman(isi.slice(0, pisah), user);
+  const sandiCocok = aman(isi.slice(pisah + 1), pass);
+  return namaCocok && sandiCocok ? user : null;
 }
 
 function aman(a: string, b: string) {
@@ -36,7 +40,15 @@ function aman(a: string, b: string) {
 }
 
 export function proxy(request: NextRequest) {
-  if (sah(request.headers.get("authorization"))) return NextResponse.next();
+  const akun = akunSah(request.headers.get("authorization"));
+  if (akun) {
+    // Nama akun yang lolos diteruskan ke halaman. Sebelum ini kop dan kalimat
+    // jejak audit memakai nama petugas karangan dari data contoh, yang berarti
+    // layar mengaku mencatat audit atas nama orang yang tidak ada.
+    const kepala = new Headers(request.headers);
+    kepala.set("x-meja-akun", akun);
+    return NextResponse.next({ request: { headers: kepala } });
+  }
 
   const belumDisetel = !process.env.MEJA_ADMIN_USER || !process.env.MEJA_ADMIN_PASS;
   return new NextResponse(

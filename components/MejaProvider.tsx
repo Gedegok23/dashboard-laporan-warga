@@ -46,6 +46,10 @@ type Isi = {
   jamTampil: string;
   /** Regu lapangan dari database. Kosong berarti meja jalan dari data contoh. */
   petugas: PetugasLapangan[];
+  /** Akun yang sedang masuk, diteruskan proxy dari kredensial Basic. */
+  akun: string;
+  /** Instansi dari tabel, untuk pilihan disposisi. */
+  instansi: string[];
 };
 
 const Konteks = createContext<Isi | null>(null);
@@ -58,6 +62,8 @@ export function MejaProvider({
   data,
   langsung = false,
   petugas,
+  akun = "Petugas instansi",
+  instansi = [],
 }: {
   children: ReactNode;
   /** Isi meja dari database. Tanpa ini, meja memakai data contoh. */
@@ -66,6 +72,10 @@ export function MejaProvider({
   langsung?: boolean;
   /** Regu lapangan dari tabel petugas_lapangan. Tanpa ini dipakai data contoh. */
   petugas?: PetugasLapangan[];
+  /** Akun yang sedang masuk. */
+  akun?: string;
+  /** Instansi dari tabel instansi. */
+  instansi?: string[];
 }) {
   const [s, kirim] = useReducer(reducer, data ? { ...keadaanAwal, data, langsung } : keadaanAwal);
   const [jamTampil, setJamTampil] = useState(JAM_MULAI);
@@ -184,6 +194,16 @@ export function MejaProvider({
     [petugas],
   );
 
+  // Instansi dari tabel bila ada; selain itu diturunkan dari isi meja, supaya
+  // pilihan disposisi tidak pernah menawarkan dinas yang tidak ada di sini.
+  const daftarInstansi = useMemo(
+    () =>
+      instansi.length
+        ? instansi
+        : [...new Set(s.data.map((k) => k.instansi).filter((n): n is string => Boolean(n)))].sort(),
+    [instansi, s.data],
+  );
+
   const nilai = useMemo(
     () => ({
       s,
@@ -193,8 +213,10 @@ export function MejaProvider({
       gagal,
       tutupGagal: () => setGagal(null),
       petugas: daftarPetugas,
+      akun,
+      instansi: daftarInstansi,
     }),
-    [s, kirimGabung, jamKini, jamTampil, gagal, daftarPetugas],
+    [s, kirimGabung, jamKini, jamTampil, gagal, daftarPetugas, akun, daftarInstansi],
   );
 
   return <Konteks.Provider value={nilai}>{children}</Konteks.Provider>;

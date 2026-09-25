@@ -100,11 +100,20 @@ export function hitungRingkas(data: Klaster[]) {
   };
 }
 
-export function bebanInstansi(data: Klaster[], daftar: string[]) {
-  const beban = daftar
-    .map((nama) => ({
-      nama,
-      n: semuaLapor(data).filter((o) => aktif(o.l) && instansiLaporan(o.l, o.k) === nama).length,
+/**
+ * Beban per instansi, dihitung dari instansi yang benar-benar muncul di isi.
+ *
+ * Sebelumnya daftarnya dipaku sebagai konstanta contoh, jadi meja menampilkan
+ * dinas dari kota lain dengan angka nol dan menyembunyikan dinas yang memang
+ * memegang laporan tapi tidak ada di konstanta itu.
+ */
+export function bebanInstansi(data: Klaster[], daftar?: string[]) {
+  const hidup = semuaLapor(data).filter((o) => aktif(o.l));
+  const nama = daftar ?? [...new Set(hidup.map((o) => instansiLaporan(o.l, o.k)))].filter(Boolean);
+  const beban = nama
+    .map((n) => ({
+      nama: n,
+      n: hidup.filter((o) => instansiLaporan(o.l, o.k) === n).length,
     }))
     .sort((a, b) => b.n - a.n);
   const maks = Math.max(1, ...beban.map((b) => b.n));
