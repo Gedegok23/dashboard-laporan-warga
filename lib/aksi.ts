@@ -368,6 +368,13 @@ export async function tindakAksi(tiket: string, nilai: StatusTindak, seKlaster: 
   await transaksi(async (c) => {
     const utama = await idDari(c, tiket);
     if (!utama || utama.duplikat || utama.status === "Menunggu") return;
+    // Laporan yang sudah dinyatakan selesai tidak bisa dimundurkan. Warga sudah
+    // dikabari "selesai" dan bukti dokumentasinya sudah tercatat; memundurkan
+    // status akan membuat kabar berikutnya bertentangan dengan yang sudah
+    // diterima pelapor. Kalau masalahnya muncul lagi, itu laporan baru.
+    if (utama.status === "Selesai" && nilai !== "selesai") {
+      throw new Error("laporan yang sudah selesai tidak bisa dikembalikan; buat laporan baru bila masalahnya muncul lagi");
+    }
     if (nilai === "selesai") {
       const n = (await c.query<{ n: string }>("SELECT count(*) n FROM bukti WHERE laporan_id = $1", [utama.id])).rows[0].n;
       if (Number(n) === 0) throw new Error("laporan tidak bisa ditutup tanpa bukti dokumentasi");
@@ -376,6 +383,8 @@ export async function tindakAksi(tiket: string, nilai: StatusTindak, seKlaster: 
     for (const id of await sasaran(c, tiket, seKlaster)) {
       const lama = (await c.query<{ status: string }>("SELECT status FROM laporan WHERE id = $1", [id])).rows[0].status;
       if (tahapDari(lama) === tahapDari(baru)) continue;
+      // Aksi seklaster tidak boleh diam-diam memundurkan laporan yang sudah tuntas.
+      if (lama === "Selesai") continue;
       await c.query(
         `UPDATE laporan SET status = $2::varchar,
                 resolved_at = CASE WHEN $2::varchar = 'Selesai' THEN now() ELSE NULL::timestamp END
@@ -431,7 +440,25 @@ async function tulisKabar(c: Klien, id: number, nilai: StatusTindak) {
         ? `${kepala} Sudah selesai ditangani ${oleh}, dengan ${r.bukti ?? 0} bukti dokumentasi dari lapangan. Kalau masalahnya muncul lagi di titik yang sama, balas pesan ini dengan foto terbaru.`
         : `${kepala} Kembali ke antrean ${instansi} dan sedang menunggu penjadwalan regu.`;
 
-  await c.query("INSERT INTO kabar (laporan_id, status, teks) VALUES ($1,$2,$3)", [id, STATUS_DB[nilai], teks]);
+  // Kabar "selesai" membawa satu foto bukti: itu yang paling meyakinkan warga
+  // bahwa pekerjaannya benar-benar dikerjakan. Yang dipilih foto terbaru yang
+  // memang tersimpan di penyimpanan objek; bukti tanpa berkas dilewati.
+  const foto =
+    nilai === "selesai"
+      ? (await c.query<{ berkas_id: number }>(
+          `SELECT berkas_id FROM bukti
+            WHERE laporan_id = $1 AND berkas_id IS NOT NULL
+            ORDER BY diunggah_at DESC LIMIT 1`,
+          [id],
+        )).rows[0]?.berkas_id ?? null
+      : null;
+
+  await c.query("INSERT INTO kabar (laporan_id, status, teks, berkas_id) VALUES ($1,$2,$3,$4)", [
+    id,
+    STATUS_DB[nilai],
+    teks,
+    foto,
+  ]);
 }
 
 export async function kirimUmpanAksi(tiket: string, teks: string, seKlaster: boolean) {
