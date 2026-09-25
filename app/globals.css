@@ -3679,16 +3679,22 @@ a.jchip {
   object-fit: contain;
 }
 
-.masuk-logo {
-  display: block;
+.masuk-merek-blok {
   margin-right: auto;
   min-width: 0;
 }
+.masuk-logo {
+  display: block;
+}
 .masuk-logo img {
   width: auto;
-  height: 42px;
+  height: 38px;
   max-width: 100%;
   object-fit: contain;
+}
+.masuk-merek-blok .masuk-semboyan {
+  margin-top: 2px;
+  padding-left: 2px;
 }
 
 /* Pemilihan varian mengikuti pola tema yang sudah dipakai token warna:

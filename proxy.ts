@@ -35,8 +35,15 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Semua kecuali portal warga, halaman masuk, unggahan lapangan, penyaji
-  // gambar, berkas statis, dan favicon. `/berkas` memeriksa haknya sendiri:
-  // foto laporan publik memang boleh dilihat siapa saja, sedangkan aslinya
-  // hanya untuk petugas.
-  matcher: ["/((?!portal|masuk|lapangan|berkas|_next/static|_next/image|favicon.ico).*)"],
+  // gambar, dan berkas statis. `/berkas` memeriksa haknya sendiri: foto
+  // laporan publik memang boleh dilihat siapa saja, sedangkan aslinya hanya
+  // untuk petugas.
+  //
+  // Berkas di public/ ikut dikecualikan lewat akhirannya. Tanpa itu logo dan
+  // favicon ikut dialihkan ke /masuk, dan pengoptimal gambar Next yang
+  // mengambil sumbernya sendiri lewat HTTP gagal dengan 400. Rute meja tidak
+  // pernah punya titik di jalurnya, jadi aturan ini tidak membuka apa pun.
+  matcher: [
+    "/((?!portal|masuk|lapangan|berkas|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|gif|svg|webp|avif|ico|txt|xml|json|webmanifest)$).*)",
+  ],
 };
